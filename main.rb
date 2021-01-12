@@ -6,7 +6,18 @@ require 'dotenv'
 
 PREFIXDATA = 'data\\prefix.json'
 USERDATA = 'data\\user.json'
-
+OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'
+VOICE = ' -m open_jtalk\bin\Voice'
+VOICES = ["mei","takumi","salt"]
+Emotions = ["normal","angry","sad","bashful","happy"]
+NORMAL = '\normal.htsvoice'
+ANGRY = '\angry.htsvoice'
+SAD = '\sad.htsvoice'
+BASHFUL = '\bashful.htsvoice'
+HAPPY = '\happy.htsvoice'
+DIC = ' -x open_jtalk\bin\dic'
+INPUT = 'open_jtalk\bin\input'
+OUTPUT = 'open_jtalk\bin\output'
 OWNER_ID = 341902175120785419
 $yomiage = []
 Dotenv.load
@@ -105,18 +116,7 @@ bot.command(:play_mp3) do |event|
   voice_bot = event.voice
   voice_bot.play_file('data/music.mp3')
 end
-OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'
-VOICE = ' -m open_jtalk\bin\Voice'
-VOICES = ["mei","takumi","salt"]
-Emotions = ["normal","angry","sad","bashful","happy"]
-NORMAL = '\normal.htsvoice'
-ANGRY = '\angry.htsvoice'
-SAD = '\sad.htsvoice'
-BASHFUL = '\bashful.htsvoice'
-HAPPY = '\happy.htsvoice'
-DIC = ' -x open_jtalk\bin\dic'
-INPUT = 'open_jtalk\bin\input'
-OUTPUT = 'open_jtalk\bin\output'
+
 
 bot.command(:yomiage) do |event,msg|
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt",msg, encoding: Encoding::SJIS)
