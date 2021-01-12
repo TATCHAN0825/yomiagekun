@@ -128,10 +128,7 @@ OUTPUT = 'open_jtalk\bin\output'
 
 bot.command(:yomiage) do |event,msg|
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt",msg, encoding: Encoding::SJIS)
-  s = system(' -ow output.mp3 v797361591443652628.txt')
   uservoice = get_user_data(event.user.id)
-  p uservoice
-
   s = system(OPEN_JTALK + VOICE + uservoice["voice"] + DIC + ' -fm ' + uservoice["thone"] + ' -r ' + uservoice["speed"] + ' -ow ' + OUTPUT + '\v' + event.server.id + INPUT + '\v' + event.server.id)
   if s == true
   voice_bot = event.voice
