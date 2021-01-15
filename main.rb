@@ -3,13 +3,14 @@ require 'json'
 require 'Date'
 require 'Open3'
 require 'dotenv'
+require 'sqlite3'
 
 PREFIXDATA = 'data\\prefix.json'
 USERDATA = 'data\\user.json'
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'
 VOICE = ' -m open_jtalk\bin\Voice'
-VOICES = ["mei","takumi","salt"]
-Emotions = ["normal","angry","sad","bashful","happy"]
+VOICES = ["mei", "takumi", "salt"]
+Emotions = ["normal", "angry", "sad", "bashful", "happy"]
 NORMAL = '\normal.htsvoice'
 ANGRY = '\angry.htsvoice'
 SAD = '\sad.htsvoice'
@@ -21,14 +22,20 @@ OUTPUT = 'open_jtalk\bin\output'
 OWNER_ID = 341902175120785419
 $yomiage = []
 Dotenv.load
-File.open(PREFIXDATA) do |prefixfile|
-  $prefix = JSON.load(prefixfile)
-end
-PREFIXES = $prefix
-File.open(USERDATA) do |user|
-  $user = JSON.load(user)
-  p $user
-end
+json1 = File.read(PREFIXDATA)
+PREFIXES = JSON.parse(json1)
+$db = SQLite3::Database.new("user.db")
+
+sql = <<SQL
+create table IF NOT EXISTS user(
+  id integer,
+  voice varchar,
+  Emotions integer,
+  speed integer,
+  thone integer
+);
+SQL
+$db.execute(sql)
 
 def set_prefix(pre, serverid)
   $prefix[serverid] = pre
@@ -39,24 +46,26 @@ prefix_proc = proc do |message|
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
 end
 
-def set_user_data(userid, emotions, voice, speed, thone)
-  $user[userid]['Emotions'] = emotions
-  $user[userid]['voice'] = voice
-  $user[userid]['speed'] = speed
-  $user[userid]['thone'] = thone
-end
-def get_user_data(userid)
-  return $user[userid]
+def update_user_data(userid, emotions = nil, voice = nil, speed = nil, thone = nil)
+  if userid.nil? == false
+
   end
-def register_user_data(userid)
-  $user[userid]["Emotions"] = 'nomarl'
-  $user[userid]['voice'] = 'mei'
-  $user[userid]['speed'] = 1
-  $user[userid]['thone'] = 0
+  false
 end
 
+def get_user_data(userid) end
+
+def register_user_data(userid) end
+
 def user_data_is?(userid)
-  user[userid].nil?
+  sql = <<'SQL'
+"select * from user where id = 2"
+SQL
+  $db.execute(sql, :id => id) do |row|
+    return true
+  end
+  #return
+  false
 end
 
 def yomiage_is?(serverid)
@@ -66,15 +75,14 @@ end
 def yomiage_start(serverid)
   $yomiage.push(serverid)
 end
+
 def yomiage_end(serverid)
   $yomiage.delete(serverid)
 end
+
 def save()
   File.open(PREFIXDATA, 'w') do |file|
     JSON.dump(PREFIXES, file)
-  end
-  File.open(USERDATA, 'w') do |userfile|
-    JSON.dump($user,userfile)
   end
 end
 
@@ -82,13 +90,13 @@ bot = Discordrb::Commands::CommandBot.new(token: ENV["TOKEN"], prefix: prefix_pr
 
 previous = Date.today
 bot.disconnected do |event|
-  save()
+  save
   puts "ボットが停止しています"
 end
 bot.heartbeat do |_event|
   now = Date.today
   if previous < now
-    save()
+    save
     puts 'セーブしています'
     previous = now
   end
@@ -117,20 +125,19 @@ bot.command(:play_mp3) do |event|
   voice_bot.play_file('data/music.mp3')
 end
 
-
-bot.command(:yomiage) do |event,msg|
-  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt",msg, encoding: Encoding::SJIS)
+bot.command(:yomiage) do |event, msg|
+  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   uservoice = get_user_data(event.user.id)
   s = system(OPEN_JTALK + VOICE + uservoice["voice"] + DIC + ' -fm ' + uservoice["thone"] + ' -r ' + uservoice["speed"] + ' -ow ' + OUTPUT + '\v' + event.server.id + INPUT + '\v' + event.server.id)
   if s == true
-  voice_bot = event.voice
-  voece_bot.play_file(OUTPUT + 'v' + event.server.id + '.wav')
+    voice_bot = event.voice
+    voece_bot.play_file(OUTPUT + 'v' + event.server.id + '.wav')
   else
     event.respond("コマンド実行エラー")
   end
 end
 
-bot.command(:setvoice) do |event,voice,emotions,speed,thone|
+bot.command(:setvoice) do |event, voice, emotions, speed, thone|
   register_user_data(event.user.id)
 end
 bot.command(:eval, help_available: false) do |event, *code|
@@ -176,7 +183,7 @@ bot.command(:volume) do |event, vol|
 end
 
 bot.command(:stop) do |event|
-  event.respond('ボイスチャット入っていません') if channel.nil? == true
+  event.respond('ボイスチャット入っていません') if event.channel.nil? == true
   event.voice.destroy
   yomiage_end(event.server.id)
   event.channel.send_embed do |embed|
@@ -208,7 +215,7 @@ end
 bot.command(:save) do |event|
   if event.user.id == OWNER_ID
     save()
-      event.respond('セーブ中です')
+    event.respond('セーブ中です')
   else
     event.respond('このボットのオーナーじゃないためデータをセーブすることができません')
   end
