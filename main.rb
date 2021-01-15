@@ -64,7 +64,7 @@ SQL
   $db.execute(sql, :id => id) do |row|
     return true
   end
-  #returnaiueo
+  #returnaiueoあいうえお
   false
 end
 
