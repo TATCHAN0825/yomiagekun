@@ -1,24 +1,22 @@
 require 'discordrb'
 require 'json'
-require 'Date'
-require 'Open3'
 require 'dotenv'
 require 'sqlite3'
 
-PREFIXDATA = 'data\\prefix.json'
-USERDATA = 'data\\user.json'
-OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'
-VOICE = ' -m open_jtalk\bin\Voice'
-VOICES = ["mei", "takumi", "salt"]
-Emotions = ["normal", "angry", "sad", "bashful", "happy"]
-NORMAL = '\normal.htsvoice'
-ANGRY = '\angry.htsvoice'
-SAD = '\sad.htsvoice'
-BASHFUL = '\bashful.htsvoice'
-HAPPY = '\happy.htsvoice'
-DIC = ' -x open_jtalk\bin\dic'
-INPUT = 'open_jtalk\bin\input'
-OUTPUT = 'open_jtalk\bin\output'
+PREFIXDATA = 'data\\prefix.json'.freeze
+USERDATA = 'data\\user.json'.freeze
+OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
+VOICE = ' -m open_jtalk\bin\Voice'.freeze
+VOICES = ["mei", "takumi", "salt"].freeze
+Emotions = ["normal", "angry", "sad", "bashful", "happy"].freeze
+NORMAL = '\normal.htsvoice'.freeze
+ANGRY = '\angry.htsvoice'.freeze
+SAD = '\sad.htsvoice'.freeze
+BASHFUL = '\bashful.htsvoice'.freeze
+HAPPY = '\happy.htsvoice'.freeze
+DIC = ' -x open_jtalk\bin\dic'.freeze
+INPUT = 'open_jtalk\bin\input'.freeze
+OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = 341902175120785419
 $yomiage = []
 Dotenv.load
@@ -26,14 +24,14 @@ json1 = File.read(PREFIXDATA)
 PREFIXES = JSON.parse(json1)
 $db = SQLite3::Database.new("user.db")
 
-sql = <<SQL
-create table IF NOT EXISTS user(
-  id integer,
-  voice varchar,
-  Emotions integer,
-  speed integer,
-  thone integer
-);
+sql = <<~SQL
+  create table IF NOT EXISTS user(
+    id integer,
+    voice varchar,
+    Emotions integer,
+    speed integer,
+    thone integer
+  );
 SQL
 $db.execute(sql)
 
@@ -53,22 +51,34 @@ def update_user_data(userid, emotions = nil, voice = nil, speed = nil, thone = n
   false
 end
 
-def get_user_data(userid) end
+def get_user_data(userid)
+  @sql = <<~'SQL'
+    "select * form user where userid=:userid"
+  SQL
+  db.execute(@sql,:userid => userid) do |row|
+    return row
+  end
+  return false
+end
 
-def register_user_data(userid) end
+def register_user_data(userid)
+  @sql = 'insert into user(id,voice,Emotions,speed,thone) values(?,?,?,?,?)'
+  voice = ["mei","takumi","slt"].sample
+  db.execute(@sql, userid,voice,"normal",1,0)
+end
 
-def user_data_is?(userid)
-  sql = <<'SQL'
-"select * from user where id = 2"
-SQL
+
+def user_data_exists?(userid)
+  sql = <<~'SQL'
+    "select * from user where id=:id LIMIT 1"
+  SQL
   $db.execute(sql, :id => id) do |row|
     return true
   end
-  #returnaiueoあいうえお
-  false
+  return false
 end
 
-def yomiage_is?(serverid)
+def yomiage_exists?(serverid)
   $yomiage[serverid].nil?
 end
 
