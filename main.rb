@@ -132,7 +132,7 @@ bot.command(:help) do |event|
 
   end
 end
-
+=begin
 bot.command(:yomiage) do |event, msg|
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   uservoice = get_user_data(event.user.id)
@@ -145,9 +145,10 @@ bot.command(:yomiage) do |event, msg|
     p cmd
   end
 end
+=end
 
 bot.command(:setvoice) do |event, voice, emotions, speed, thone|
-  register_user_data(event.user.id)
+  update_user_data(event.user.id, voice, emotions, speed, thone)
 end
 bot.command(:eval, help_available: false) do |event, *code|
   break unless event.user.id == 341902175120785419 # Replace number with your ID
@@ -192,7 +193,8 @@ bot.command(:volume) do |event, vol|
 end
 
 bot.command(:stop) do |event|
-  event.respond('ボイスチャット入っていません') if event.channel.nil? == true
+  if event.user.voice_channel.nil? == true
+    event.respond('ボイスチャット入っていません')
   event.voice.destroy
   yomiage_end(event.server.id)
   event.channel.send_embed do |embed|
@@ -201,6 +203,7 @@ bot.command(:stop) do |event|
 読み上げを終了してします
 使い方は#{PREFIXES[event.message.server.id] || '#'}helpを参考にしてください
 "
+    end
   end
 end
 bot.command(:setprefix) do |event, pre|
