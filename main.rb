@@ -23,7 +23,10 @@ Dotenv.load
 json1 = File.read(PREFIXDATA)
 PREFIXES = JSON.parse(json1)
 $db = SQLite3::Database.new("user.db")
-
+$voice = 1
+$emotions = 2
+$speed = 3
+$thone = 4
 sql = <<~SQL
   create table IF NOT EXISTS user(
     id integer,
@@ -53,29 +56,28 @@ end
 
 def get_user_data(userid)
   @sql = <<~'SQL'
-    "select * form user where userid=:userid"
+    select * from user where id=:id
   SQL
-  db.execute(@sql,:userid => userid) do |row|
+  $db.execute(@sql, id: userid) do |row|
     return row
   end
-  return false
+  false
 end
 
 def register_user_data(userid)
   @sql = 'insert into user(id,voice,Emotions,speed,thone) values(?,?,?,?,?)'
-  voice = ["mei","takumi","slt"].sample
-  db.execute(@sql, userid,voice,"normal",1,0)
+  voice = ["mei", "takumi", "slt"].sample
+  $db.execute(@sql, userid, voice, "normal", "1", "0")
 end
-
 
 def user_data_exists?(userid)
   sql = <<~'SQL'
     "select * from user where id=:id LIMIT 1"
   SQL
-  $db.execute(sql, :id => id) do |row|
+  $db.execute(sql, id: id) do |row|
     return true
   end
-  return false
+  false
 end
 
 def yomiage_exists?(serverid)
@@ -136,14 +138,16 @@ bot.command(:play_mp3) do |event|
 end
 
 bot.command(:yomiage) do |event, msg|
+  p "test"
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   uservoice = get_user_data(event.user.id)
-  s = system(OPEN_JTALK + VOICE + uservoice["voice"] + DIC + ' -fm ' + uservoice["thone"] + ' -r ' + uservoice["speed"] + ' -ow ' + OUTPUT + '\v' + event.server.id + INPUT + '\v' + event.server.id)
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{uservoice[$voice]}" + SAD + DIC + ' -fm ' + "#{uservoice[$thone]}" + ' -r ' + "#{uservoice[$speed]}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + " " + INPUT + '\v' + "#{event.server.id}.txt")
   if s == true
     voice_bot = event.voice
-    voece_bot.play_file(OUTPUT + 'v' + event.server.id + '.wav')
+    voice_bot.play_file(OUTPUT + '\v' + "#{event.server.id}" + '.wav')
   else
     event.respond("コマンド実行エラー")
+    p cmd
   end
 end
 
