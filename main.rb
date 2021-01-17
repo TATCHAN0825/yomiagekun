@@ -39,7 +39,7 @@ SQL
 $db.execute(sql)
 
 def set_prefix(pre, serverid)
-  $prefix[serverid] = pre
+  PREFIXES[serverid] = pre
 end
 
 prefix_proc = proc do |message|
@@ -132,13 +132,8 @@ bot.command(:help) do |event|
 
   end
 end
-bot.command(:play_mp3) do |event|
-  voice_bot = event.voice
-  voice_bot.play_file('data/music.mp3')
-end
 
 bot.command(:yomiage) do |event, msg|
-  p "test"
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   uservoice = get_user_data(event.user.id)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{uservoice[$voice]}" + SAD + DIC + ' -fm ' + "#{uservoice[$thone]}" + ' -r ' + "#{uservoice[$speed]}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + " " + INPUT + '\v' + "#{event.server.id}.txt")
@@ -210,15 +205,19 @@ bot.command(:stop) do |event|
 end
 bot.command(:setprefix) do |event, pre|
   if event.author.permission?("administrator") == true
+    if pre.size < 2
     set_prefix(pre, event.server.id)
     event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+    else
+      event.respond("prefixを二文字以内にしてください")
+    end
   else
     event.respond('サーバーの管理者しか実行できません')
   end
 end
 bot.command(:botstop) do |event|
   if event.user.id == OWNER_ID
-    save()
+    save
     event.respond('ボットを停止中です')
     event.bot.stop
   else
@@ -228,7 +227,7 @@ end
 
 bot.command(:save) do |event|
   if event.user.id == OWNER_ID
-    save()
+    save
     event.respond('セーブ中です')
   else
     event.respond('このボットのオーナーじゃないためデータをセーブすることができません')
