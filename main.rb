@@ -255,7 +255,7 @@ bot.command(:stop) do |event|
 end
 bot.command(:setprefix) do |event, pre|
   if event.author.permission?("administrator") == true
-    if pre.size < 2
+    if pre.size <= 2
       set_prefix(pre, event.server.id)
       event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
     else
@@ -296,7 +296,7 @@ PREFIX
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
-#{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim}"
+#{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}"
   end
 end
 bot.run
