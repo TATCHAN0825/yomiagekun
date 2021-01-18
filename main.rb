@@ -104,7 +104,7 @@ def yomiage_end(serverid)
   $yomiage.delete(serverid)
 end
 
-def save()
+def save
   File.open(PREFIXDATA, 'w') do |file|
     JSON.dump($prefixes, file)
   end
