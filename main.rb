@@ -7,20 +7,20 @@ require './models/user'
 
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 
-Dotenv.load
+Dotenv.load "config.env"
 
 # dotenvで必要な値を定義する
-DOTENV_REQUIRED = ["TOKEN", "OWNER_ID", "DEFAULT_PREFIX"].freeze
+DOTENV_REQUIRED = ["TOKEN", "OWNER_ID", "DEFAULT_PREFIX", "EVAL"].freeze
 
 error_count = 0
 DOTENV_REQUIRED.each do |required|
   if ENV[required].nil?
     error_count += 1
-    puts ".envに#{required}が無いよ"
+    puts "config.envに#{required}が無いよ"
   end
 end
 if error_count > 0
-  puts "sample.envを参考に.envを編集してください"
+  puts "config_sample.envを参考にconfig.envを編集してください"
   exit
 end
 
@@ -41,6 +41,7 @@ INPUT = 'open_jtalk\bin\input'.freeze
 OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = ENV["OWNER_ID"].to_i.freeze
 DEFAULT_PREFIX = ENV["DEFAULT_PREFIX"].freeze
+EVAL = ENV["EVAL"].freeze
 $yomiage = []
 unless File.exist?(DATA)
   Dir.mkdir(DATA)
@@ -192,20 +193,22 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
-                                       "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ""))
+                                     "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ""))
   else
     event.respond("設定を保存できませんでした")
   end
 end
 bot.command(:eval, help_available: false) do |event, *code|
-  break unless event.user.id == OWNER_ID # Replace number with your ID
-
-  begin
-
-    event.respond eval code.join(' ')
-  rescue
-    "エラーが発生しました。
+  if EVAL == true
+    break unless event.user.id == OWNER_ID # Replace number with your ID
+    begin
+      event.respond eval code.join(' ')
+    rescue
+      "エラーが発生しました。
       実行したコード：#{code.join(' ')}"
+    end
+  else
+    event.respond("許可されていません\nconfig.envのEVALをtrueに変更してください")
   end
 end
 =begin
