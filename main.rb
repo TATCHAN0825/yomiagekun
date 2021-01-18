@@ -194,7 +194,7 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
     voice = nil
     error_messages << "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
   end
-  unless emotion_included?(voice, emoton)
+  unless emotion_included?(voice, emotion)
     emotion = nil
     error_messages << "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistの参考にしてください"
   end
