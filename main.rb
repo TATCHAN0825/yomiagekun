@@ -3,8 +3,9 @@ require 'json'
 require 'dotenv'
 require 'sqlite3'
 
-PREFIXDATA = 'data\\prefix.json'.freeze
-USERDATA = 'data\\user.json'.freeze
+DATA = 'data'.freeze
+PREFIXDATA = DATA + '\prefix.json'.freeze
+USERDATA = DATA + '\user.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
 VOICES = ["mei", "takumi", "salt"].freeze
@@ -20,8 +21,14 @@ OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = 341902175120785419
 $yomiage = []
 Dotenv.load
-json1 = File.read(PREFIXDATA)
-$prefixes = JSON.parse(json1)
+unless File.exist?(DATA)
+  Dir.mkdir(DATA)
+end
+if File.exist?(PREFIXDATA)
+  $prefixes = JSON.parse(File.read(PREFIXDATA))
+else
+  $prefixes = {}
+end
 $db = SQLite3::Database.new("user.db")
 $voice = 1
 $emotions = 2
