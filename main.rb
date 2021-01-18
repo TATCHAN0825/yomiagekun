@@ -2,6 +2,10 @@ require 'discordrb'
 require 'json'
 require 'dotenv'
 require 'sqlite3'
+require './db/connect'
+require './models/user'
+
+ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 Dotenv.load
 
@@ -26,7 +30,7 @@ USERDATA = DATA + '\user.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
 VOICES = ["mei", "takumi", "salt"].freeze
-Emotions = ["normal", "angry", "sad", "bashful", "happy"].freeze
+EMOTIONS = ["normal", "angry", "sad", "bashful", "happy"].freeze
 NORMAL = '\normal.htsvoice'.freeze
 ANGRY = '\angry.htsvoice'.freeze
 SAD = '\sad.htsvoice'.freeze
@@ -47,20 +51,6 @@ else
   $prefixes = {}
 end
 $db = SQLite3::Database.new("user.db")
-$voice = 1
-$emotions = 2
-$speed = 3
-$thone = 4
-sql = <<~SQL
-  create table IF NOT EXISTS user(
-    id integer,
-    voice varchar,
-    Emotions integer,
-    speed integer,
-    thone integer
-  );
-SQL
-$db.execute(sql)
 
 def set_prefix(pre, serverid)
   $prefixes[serverid.to_s] = pre
@@ -79,37 +69,26 @@ prefix_proc = proc do |message|
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
 end
 
-def update_user_data(userid, emotions = nil, voice = nil, speed = nil, thone = nil)
-  if userid.nil? == false
-
-  end
-  false
+def update_user_data(userid, voice = nil, emotion = nil, speed = nil, tone = nil)
+  user = get_user_data(userid)
+  user.voice = voice unless voice.nil?
+  user.emotion = emotion unless emotion.nil?
+  user.speed = speed.to_f unless speed.nil?
+  user.tone = tone.to_f unless tone.nil?
+  user.save #return
 end
 
 def get_user_data(userid)
-  @sql = <<~'SQL'
-    select * from user where id=:id
-  SQL
-  $db.execute(@sql, id: userid) do |row|
-    return row
-  end
-  false
+  User.find_by(id: userid)
 end
 
 def register_user_data(userid)
-  @sql = 'insert into user(id,voice,Emotions,speed,thone) values(?,?,?,?,?)'
   voice = ["mei", "takumi", "slt"].sample
-  $db.execute(@sql, userid, voice, "normal", "1", "0")
+  User.create(id: userid, voice: voice, emotion: "normal", speed: 1.0, tone: 1.0)
 end
 
 def user_data_exists?(userid)
-  sql = <<~'SQL'
-    "select * from user where id=:id LIMIT 1"
-  SQL
-  $db.execute(sql, id: id) do |row|
-    return true
-  end
-  false
+  User.exists?(id: userid)
 end
 
 def yomiage_exists?(serverid)
@@ -167,8 +146,8 @@ end
 =begin
 bot.command(:yomiage) do |event, msg|
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
-  uservoice = get_user_data(event.user.id)
-  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{uservoice[$voice]}" + SAD + DIC + ' -fm ' + "#{uservoice[$thone]}" + ' -r ' + "#{uservoice[$speed]}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + " " + INPUT + '\v' + "#{event.server.id}.txt")
+  user = get_user_data(event.user.id)
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + SAD + DIC + ' -fm ' + "#{user.tone]}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + " " + INPUT + '\v' + "#{event.server.id}.txt")
   if s == true
     voice_bot = event.voice
     voice_bot.play_file(OUTPUT + '\v' + "#{event.server.id}" + '.wav')
@@ -179,8 +158,44 @@ bot.command(:yomiage) do |event, msg|
 end
 =end
 
-bot.command(:setvoice) do |event, voice, emotions, speed, thone|
-  update_user_data(event.user.id, voice, emotions, speed, thone)
+bot.command(:getvoice) do |event|
+  if user_data_exists?(event.user.id)
+    user = get_user_data(event.user.id)
+    event.channel.send_embed do |embed|
+      embed.title = "#{event.user.name}さんのボイス設定"
+      embed.description = <<EOL
+voice: #{user.voice}
+emotion: #{user.emotion}
+speed: #{user.speed}
+tone: #{user.tone}
+EOL
+    end
+  else
+    register_user_data(event.user.id)
+    event.respond("ユーザーデータ存在しなかったけど登録しといたよ")
+  end
+end
+
+bot.command(:setvoice) do |event, voice, emotion, speed, tone|
+  error_messages = []
+
+  #TODO: めんどくさいからここらへんどうにかして
+  #voice = nil; error_messages << "対応していないvoiceです" unless VOICES.include?(voice)
+  #emotion = nil; error_messages << "対応していないemotionです" unless EMOTIONS.include?(emotion)
+  #speed = nil; error_messages << "speedは数値にしてね" unless float?(speed) #and 範囲の検証 TODO
+  #tone = nil; error_messages << "toneは数値にしてね" unless float?(tone) #and 範囲の検証 TODO
+
+  messages = ""
+  error_messages.each do |message|
+    messages += "\n" + message
+  end
+
+  if update_user_data(event.user.id, voice, emotion, speed, tone)
+    event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
+                                       "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ""))
+  else
+    event.respond("設定を保存できませんでした")
+  end
 end
 bot.command(:eval, help_available: false) do |event, *code|
   break unless event.user.id == OWNER_ID # Replace number with your ID
