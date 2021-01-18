@@ -223,11 +223,11 @@ end
 bot.command(:stop) do |event|
   if event.user.voice_channel.nil? == true
     event.respond('ボイスチャット入っていません')
-  event.voice.destroy
-  yomiage_end(event.server.id)
-  event.channel.send_embed do |embed|
-    embed.title = "読み上げくんv2"
-    embed.description = "
+    event.voice.destroy
+    yomiage_end(event.server.id)
+    event.channel.send_embed do |embed|
+      embed.title = "読み上げくんv2"
+      embed.description = "
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 "
@@ -237,8 +237,8 @@ end
 bot.command(:setprefix) do |event, pre|
   if event.author.permission?("administrator") == true
     if pre.size < 2
-    set_prefix(pre, event.server.id)
-    event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+      set_prefix(pre, event.server.id)
+      event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
     else
       event.respond("prefixを二文字以内にしてください")
     end
