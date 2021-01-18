@@ -7,7 +7,7 @@
 `bundle install`
 
 ### .envの作成
-`sample.env`を`.env`としてコピーして編集
+`config_sample.env`を`config.env`としてリネイムして編集
 
 ### データベースの準備
 `ruby migrate_db.rb`
