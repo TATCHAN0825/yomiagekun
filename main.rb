@@ -21,7 +21,7 @@ OWNER_ID = 341902175120785419
 $yomiage = []
 Dotenv.load
 json1 = File.read(PREFIXDATA)
-PREFIXES = JSON.parse(json1)
+$prefixes = JSON.parse(json1)
 $db = SQLite3::Database.new("user.db")
 $voice = 1
 $emotions = 2
@@ -39,11 +39,11 @@ SQL
 $db.execute(sql)
 
 def set_prefix(pre, serverid)
-  PREFIXES[serverid] = pre
+  $prefixes[serverid] = pre
 end
 
 prefix_proc = proc do |message|
-  prefix = PREFIXES[message.server.id] || '#'
+  prefix = $prefixes[message.server.id] || '#'
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
 end
 
@@ -94,7 +94,7 @@ end
 
 def save()
   File.open(PREFIXDATA, 'w') do |file|
-    JSON.dump(PREFIXES, file)
+    JSON.dump($prefixes, file)
   end
 end
 
@@ -123,7 +123,7 @@ bot.command(:start) do |event|
     embed.description = "
 読み上げを開始します
 読み上げチャンネル #{channel.name}
-使い方は#{PREFIXES[event.message.server.id] || '#'}helpを参考にしてください
+使い方は#{$prefixes[event.message.server.id] || '#'}helpを参考にしてください
 "
   end
 end
@@ -201,7 +201,7 @@ bot.command(:stop) do |event|
     embed.title = "読み上げくんv2"
     embed.description = "
 読み上げを終了してします
-使い方は#{PREFIXES[event.message.server.id] || '#'}helpを参考にしてください
+使い方は#{$prefixes[event.message.server.id] || '#'}helpを参考にしてください
 "
     end
   end
@@ -245,7 +245,7 @@ SERVERS
 USERS
 #{bot.users.size}
 PREFIX
-#{PREFIXES[event.server.id] || '#'}
+#{$prefixes[event.server.id] || '#'}
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
