@@ -93,8 +93,8 @@ end
 
 def register_user_data(userid)
   voice = %w[mei takumi slt].sample
-  voiceemotion = { 'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy],
-                   'slt' => ['normal'] }
+  voiceemotion = {'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy],
+                  'slt' => ['normal']}
   emotion = voiceemotion[voice].sample
   User.create(id: userid, voice: voice, emotion: emotion, speed: 1.0, tone: 1.0)
 end
@@ -185,8 +185,8 @@ EOL
 end
 
 def emotion_included?(voice, emotion)
-  voiceemotion = { 'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
-                   'slt' => ['normal'] }
+  voiceemotion = {'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
+                  'slt' => ['normal']}
   voiceemotion[voice].include?(emotion)
 end
 
@@ -217,7 +217,7 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
-                                     "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ''))
+                                       "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ''))
   else
     event.respond('設定を保存できませんでした')
   end
