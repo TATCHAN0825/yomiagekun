@@ -70,6 +70,10 @@ def get_prefix(serverid)
   $prefixes[serverid.to_s] || DEFAULT_PREFIX
 end
 
+def float?(value)
+  /^[+-]?[0-9]*[.]?[0-9]+$/ =~ value
+end
+
 prefix_proc = proc do |message|
   prefix = get_prefix(message.server.id)
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
@@ -205,8 +209,7 @@ end
 =end
 
 bot.command(:volume) do |event, vol|
-  if (/^[+-]?[0-9]*[\.]?[0-9]+$/ =~ vol)
-
+  if float?(vol)
     if vol.to_f <= 150 && vol.to_f >= 0
       voice_bot = event.voice
       voice_bot.filter_volume = vol
