@@ -130,7 +130,7 @@ bot.command(:start) do |event|
   bot.voice_connect(channel)
   yomiage_start(event.server.id)
   event.channel.send_embed do |embed|
-    embed.title = "読み上げくんv2"
+    embed.title = event.server.bot.name
     embed.description = "
 読み上げを開始します
 読み上げチャンネル #{channel.name}
@@ -245,7 +245,7 @@ bot.command(:stop) do |event|
     event.voice.destroy
     yomiage_end(event.server.id)
     event.channel.send_embed do |embed|
-      embed.title = "読み上げくんv2"
+      embed.title = event.server.bot.name
       embed.description = "
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
