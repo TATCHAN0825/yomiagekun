@@ -3,6 +3,8 @@ require 'json'
 require 'dotenv'
 require 'sqlite3'
 
+Dotenv.load
+
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
 USERDATA = DATA + '\user.json'.freeze
@@ -18,10 +20,9 @@ HAPPY = '\happy.htsvoice'.freeze
 DIC = ' -x open_jtalk\bin\dic'.freeze
 INPUT = 'open_jtalk\bin\input'.freeze
 OUTPUT = 'open_jtalk\bin\output'.freeze
-OWNER_ID = 341902175120785419
-DEFAULT_PREFIX = '#'
+OWNER_ID = ENV["OWNER_ID"].to_i.freeze
+DEFAULT_PREFIX = ENV["DEFAULT_PREFIX"].freeze
 $yomiage = []
-Dotenv.load
 unless File.exist?(DATA)
   Dir.mkdir(DATA)
 end
