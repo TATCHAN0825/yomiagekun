@@ -143,7 +143,7 @@ bot.heartbeat do |_event|
 end
 bot.command(:start) do |event|
   channel = event.user.voice_channel
-  event.respond('ボイスチャット入ろうね!!') if channel.nil? == true
+  event.respond('ボイスチャット入ろうね!!'); return if channel.nil? == true
   bot.voice_connect(channel)
   yomiage_start(event.server.id)
   event.channel.send_embed do |embed|
