@@ -210,14 +210,11 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
     error_messages << 'toneは数値にしてね'
   end
 
-  messages = ''
-  error_messages.each do |message|
-    messages += "\n" + message
-  end
+  messages = error_messages.join("\n")
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
-                                       "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ''))
+                                       "ただし、#{size.to_s}件の設定は保存できませんでした:\n" + messages : ''))
   else
     event.respond('設定を保存できませんでした')
   end
@@ -304,11 +301,7 @@ bot.command(:setprefix) do |event, pre|
       if (set_prefix_result = set_prefix(pre, event.server.id)) === true
         event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
       else
-        message = ""
-        set_prefix_result.each do |msg|
-          message += "\n" + msg
-        end
-        event.respond("prefixの設定中にエラーが発生しました:" + message)
+        event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
       end
     else
       event.respond('prefixを二文字以内にしてください')
