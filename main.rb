@@ -187,7 +187,7 @@ end
 def emotion_included?(voice, emotion)
   voiceemotion = {'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
                   'slt' => ['normal']}
-  voiceemotion[voice].include?(emotion)
+  voiceemotion[voice]&.include?(emotion)
 end
 
 bot.command(:setvoice) do |event, voice, emotion, speed, tone|
