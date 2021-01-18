@@ -6,12 +6,10 @@ require './db/connect'
 require './models/user'
 require './models/prefix'
 
-ActiveRecord::Base.logger = Logger.new(STDOUT)
-
 Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
-DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL'].freeze
+DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL', 'DEBUG'].freeze
 
 error_count = 0
 DOTENV_REQUIRED.each do |required|
@@ -24,6 +22,9 @@ if error_count > 0
   puts 'config_sample.envを参考にconfig.envを編集してください'
   exit
 end
+
+# デバッグモードの場合のみActiveRecordのログを表示する
+ActiveRecord::Base.logger = Logger.new(STDOUT) if ((DEBUG = ENV['DEBUG'] === true).freeze)
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
