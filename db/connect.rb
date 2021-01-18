@@ -1,6 +1,4 @@
 require 'active_record'
+require 'yaml'
 
-ActiveRecord::Base.establish_connection(
-    adapter: 'sqlite3',
-    database: 'db/main.db'
-)
+ActiveRecord::Base.establish_connection(YAML.load_file("./config/database.yml"))
