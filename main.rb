@@ -19,6 +19,7 @@ DIC = ' -x open_jtalk\bin\dic'.freeze
 INPUT = 'open_jtalk\bin\input'.freeze
 OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = 341902175120785419
+DEFAULT_PREFIX = '#'
 $yomiage = []
 Dotenv.load
 unless File.exist?(DATA)
@@ -46,11 +47,15 @@ SQL
 $db.execute(sql)
 
 def set_prefix(pre, serverid)
-  $prefixes[serverid] = pre
+  $prefixes[serverid.to_s] = pre
+end
+
+def get_prefix(serverid)
+  $prefixes[serverid.to_s] || DEFAULT_PREFIX
 end
 
 prefix_proc = proc do |message|
-  prefix = $prefixes[message.server.id] || '#'
+  prefix = get_prefix(message.server.id)
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
 end
 
@@ -130,7 +135,7 @@ bot.command(:start) do |event|
     embed.description = "
 読み上げを開始します
 読み上げチャンネル #{channel.name}
-使い方は#{$prefixes[event.message.server.id] || '#'}helpを参考にしてください
+使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 "
   end
 end
@@ -208,7 +213,7 @@ bot.command(:stop) do |event|
     embed.title = "読み上げくんv2"
     embed.description = "
 読み上げを終了してします
-使い方は#{$prefixes[event.message.server.id] || '#'}helpを参考にしてください
+使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 "
     end
   end
@@ -252,7 +257,7 @@ SERVERS
 USERS
 #{bot.users.size}
 PREFIX
-#{$prefixes[event.server.id] || '#'}
+#{get_prefix(event.server.id)}
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
