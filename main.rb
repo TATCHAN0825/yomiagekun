@@ -236,7 +236,7 @@ bot.command(:botstop) do |event|
     event.respond('ボットを停止中です')
     event.bot.stop
   else
-    event.respond('このボットのオーナーじゃないためデータをセーブすることができません')
+    event.respond('このボットのオーナーじゃないためボットを停止することができません')
   end
 end
 
