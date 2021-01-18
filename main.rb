@@ -26,7 +26,6 @@ end
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
-USERDATA = DATA + '\user.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
 VOICES = ['mei', 'takumi', 'slt'].freeze
