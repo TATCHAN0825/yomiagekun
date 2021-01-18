@@ -5,6 +5,21 @@ require 'sqlite3'
 
 Dotenv.load
 
+# dotenvで必要な値を定義する
+DOTENV_REQUIRED = ["TOKEN", "OWNER_ID", "DEFAULT_PREFIX"].freeze
+
+error_count = 0
+DOTENV_REQUIRED.each do |required|
+  if ENV[required].nil?
+    error_count += 1
+    puts ".envに#{required}が無いよ"
+  end
+end
+if error_count > 0
+  puts "sample.envを参考に.envを編集してください"
+  exit
+end
+
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
 USERDATA = DATA + '\user.json'.freeze
