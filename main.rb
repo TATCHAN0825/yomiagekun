@@ -7,10 +7,10 @@ require './models/user'
 
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 
-Dotenv.load "config.env"
+Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
-DOTENV_REQUIRED = ["TOKEN", "OWNER_ID", "DEFAULT_PREFIX", "EVAL"].freeze
+DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL'].freeze
 
 error_count = 0
 DOTENV_REQUIRED.each do |required|
@@ -20,7 +20,7 @@ DOTENV_REQUIRED.each do |required|
   end
 end
 if error_count > 0
-  puts "config_sample.envを参考にconfig.envを編集してください"
+  puts 'config_sample.envを参考にconfig.envを編集してください'
   exit
 end
 
@@ -29,8 +29,8 @@ PREFIXDATA = DATA + '\prefix.json'.freeze
 USERDATA = DATA + '\user.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
-VOICES = ["mei", "takumi", "salt"].freeze
-EMOTIONS = ["normal", "angry", "sad", "bashful", "happy"].freeze
+VOICES = ['mei', 'takumi', 'slt'].freeze
+EMOTIONS = ['normal', 'angry', 'sad', 'bashful', 'happy'].freeze
 NORMAL = '\normal.htsvoice'.freeze
 ANGRY = '\angry.htsvoice'.freeze
 SAD = '\sad.htsvoice'.freeze
@@ -39,9 +39,9 @@ HAPPY = '\happy.htsvoice'.freeze
 DIC = ' -x open_jtalk\bin\dic'.freeze
 INPUT = 'open_jtalk\bin\input'.freeze
 OUTPUT = 'open_jtalk\bin\output'.freeze
-OWNER_ID = ENV["OWNER_ID"].to_i.freeze
-DEFAULT_PREFIX = ENV["DEFAULT_PREFIX"].freeze
-EVAL = ENV["EVAL"].freeze
+OWNER_ID = ENV['OWNER_ID'].to_i.freeze
+DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
+EVAL = ENV['EVAL'].freeze
 $yomiage = []
 unless File.exist?(DATA)
   Dir.mkdir(DATA)
@@ -51,7 +51,6 @@ if File.exist?(PREFIXDATA)
 else
   $prefixes = {}
 end
-$db = SQLite3::Database.new("user.db")
 
 def set_prefix(pre, serverid)
   $prefixes[serverid.to_s] = pre
@@ -84,8 +83,11 @@ def get_user_data(userid)
 end
 
 def register_user_data(userid)
-  voice = ["mei", "takumi", "slt"].sample
-  User.create(id: userid, voice: voice, emotion: "normal", speed: 1.0, tone: 1.0)
+  voice = %w[mei takumi slt].sample
+  voiceemotion = { 'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy],
+                   'slt' => ['normal'] }
+  emotion = voiceemotion[voice].sample
+  User.create(id: userid, voice: voice, emotion: emotion, speed: 1.0, tone: 1.0)
 end
 
 def user_data_exists?(userid)
@@ -110,12 +112,12 @@ def save
   end
 end
 
-bot = Discordrb::Commands::CommandBot.new(token: ENV["TOKEN"], prefix: prefix_proc)
+bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
 
 previous = Date.today
-bot.disconnected do |event|
+bot.disconnected do |_event|
   save
-  puts "ボットが停止しています"
+  puts 'ボットが停止しています'
 end
 bot.heartbeat do |_event|
   now = Date.today
@@ -124,6 +126,9 @@ bot.heartbeat do |_event|
     puts 'セーブしています'
     previous = now
   end
+end
+bot.ready do |event|
+  bot.game = "#{DEFAULT_PREFIX}help"
 end
 bot.command(:start) do |event|
   channel = event.user.voice_channel
@@ -144,20 +149,19 @@ bot.command(:help) do |event|
 
   end
 end
-=begin
-bot.command(:yomiage) do |event, msg|
+
+def yomiage(msg, voice, useris, serverid)
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
-  user = get_user_data(event.user.id)
-  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + SAD + DIC + ' -fm ' + "#{user.tone]}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + " " + INPUT + '\v' + "#{event.server.id}.txt")
+  user = get_user_data(userid)
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + ' ' + INPUT + '\v' + "#{event.server.id}.txt")
   if s == true
-    voice_bot = event.voice
-    voice_bot.play_file(OUTPUT + '\v' + "#{event.server.id}" + '.wav')
+    #voice_bot = event.voice
+    voice.play_file(OUTPUT + '\v' + "#{event.server.id}" + '.wav')
   else
-    event.respond("コマンド実行エラー")
+    event.respond('コマンド実行エラー')
     p cmd
   end
 end
-=end
 
 bot.command(:getvoice) do |event|
   if user_data_exists?(event.user.id)
@@ -173,33 +177,42 @@ EOL
     end
   else
     register_user_data(event.user.id)
-    event.respond("ユーザーデータ存在しなかったけど登録しといたよ")
+    event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
   end
+end
+
+def emotion_included?(voice, emotion)
+  voiceemotion = { 'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
+                   'slt' => ['normal'] }
+  voiceemotion[voice].include?(emotion)
 end
 
 bot.command(:setvoice) do |event, voice, emotion, speed, tone|
   error_messages = []
 
-  #TODO: めんどくさいからここらへんどうにかして
-  #voice = nil; error_messages << "対応していないvoiceです" unless VOICES.include?(voice)
-  #emotion = nil; error_messages << "対応していないemotionです" unless EMOTIONS.include?(emotion)
-  #speed = nil; error_messages << "speedは数値にしてね" unless float?(speed) #and 範囲の検証 TODO
-  #tone = nil; error_messages << "toneは数値にしてね" unless float?(tone) #and 範囲の検証 TODO
+  voice = nil;
+  error_messages << "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください" unless VOICES.include?(voice)
+  emotion = nil;
+  error_messages << "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistの参考にしてください" unless emotion_included?(
+    voice, emoton)
+  speed = nil; error_messages << 'speedは数値にしてね' unless float?(speed)
+  tone = nil; error_messages << 'toneは数値にしてね' unless float?(tone)
 
-  messages = ""
+  messages = ''
   error_messages.each do |message|
     messages += "\n" + message
   end
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
-                                     "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ""))
+                                     "ただし、#{size.to_s}件の設定は保存できませんでした。" + messages : ''))
   else
-    event.respond("設定を保存できませんでした")
+    event.respond('設定を保存できませんでした')
   end
 end
 bot.command(:eval, help_available: false) do |event, *code|
-  if EVAL == true
+
+  if EVAL == 'true'
     break unless event.user.id == OWNER_ID # Replace number with your ID
     begin
       event.respond eval code.join(' ')
@@ -209,6 +222,22 @@ bot.command(:eval, help_available: false) do |event, *code|
     end
   else
     event.respond("許可されていません\nconfig.envのEVALをtrueに変更してください")
+  end
+end
+bot.command(:emotionlist) do |event|
+  event.channel.send_embed do |embed|
+    embed.title = '感情リスト'
+    embed.description = "
+    mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]\n slt [normal]
+"
+  end
+end
+bot.command(:voicelist) do |event|
+  event.channel.send_embed do |embed|
+    embed.title = 'ボイスリスト'
+    embed.description = "
+    mei\ntakumi　\n slt
+"
   end
 end
 =begin
@@ -233,7 +262,7 @@ bot.command(:volume) do |event, vol|
       voice_bot.filter_volume = vol
       event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
     else
-      event.respond("ボリュームを0から150の間で入力してください")
+      event.respond('ボリュームを0から150の間で入力してください')
     end
   else
 
@@ -257,12 +286,12 @@ bot.command(:stop) do |event|
   end
 end
 bot.command(:setprefix) do |event, pre|
-  if event.author.permission?("administrator") == true
+  if event.author.permission?('administrator') == true
     if pre.size <= 2
       set_prefix(pre, event.server.id)
       event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
     else
-      event.respond("prefixを二文字以内にしてください")
+      event.respond('prefixを二文字以内にしてください')
     end
   else
     event.respond('サーバーの管理者しか実行できません')
@@ -288,7 +317,7 @@ bot.command(:save) do |event|
 end
 bot.command(:botinfo) do |event|
   event.channel.send_embed do |embed|
-    embed.title = "ボットの詳細"
+    embed.title = 'ボットの詳細'
     embed.description = "
 SERVERS
 #{bot.servers.size}
