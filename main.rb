@@ -241,6 +241,7 @@ end
 bot.command(:stop) do |event|
   if event.user.voice_channel.nil? == true
     event.respond('ボイスチャット入っていません')
+  else
     event.voice.destroy
     yomiage_end(event.server.id)
     event.channel.send_embed do |embed|
