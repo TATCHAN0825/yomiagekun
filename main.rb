@@ -179,7 +179,7 @@ bot.command(:setvoice) do |event, voice, emotions, speed, thone|
   update_user_data(event.user.id, voice, emotions, speed, thone)
 end
 bot.command(:eval, help_available: false) do |event, *code|
-  break unless event.user.id == 341902175120785419 # Replace number with your ID
+  break unless event.user.id == OWNER_ID # Replace number with your ID
 
   begin
 
