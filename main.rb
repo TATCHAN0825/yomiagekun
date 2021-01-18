@@ -4,6 +4,7 @@ require 'dotenv'
 require 'sqlite3'
 require './db/connect'
 require './models/user'
+require './models/prefix'
 
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 
@@ -26,6 +27,7 @@ end
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
+MIGRATED_PREFIXDATA = DATA + '\migrated_prefix.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
 VOICES = ['mei', 'takumi', 'slt'].freeze
@@ -42,21 +44,29 @@ OWNER_ID = ENV['OWNER_ID'].to_i.freeze
 DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
 EVAL = ENV['EVAL'].freeze
 $yomiage = []
-unless File.exist?(DATA)
-  Dir.mkdir(DATA)
-end
+
+# jsonのprefixからDBに移行
 if File.exist?(PREFIXDATA)
-  $prefixes = JSON.parse(File.read(PREFIXDATA))
-else
-  $prefixes = {}
+  count = 0
+  JSON.parse(File.read(PREFIXDATA)).each do |serverid, pre|
+    Prefix.create(id: serverid, prefix: pre)
+    count += 1
+  end
+  File.rename(PREFIXDATA, MIGRATED_PREFIXDATA)
+  puts count.to_s + "件のprefixを移行しました"
 end
 
 def set_prefix(pre, serverid)
-  $prefixes[serverid.to_s] = pre
+  if (prefix_model = Prefix.find_by(id: serverid)).nil?
+    Prefix.create(id: serverid, prefix: pre) || prefix_model.errors.full_messages
+  else
+    prefix_model.prefix = pre
+    prefix_model.save || prefix_model.errors.full_messages
+  end
 end
 
 def get_prefix(serverid)
-  $prefixes[serverid.to_s] || DEFAULT_PREFIX
+  Prefix.find_by(id: serverid)&.prefix || DEFAULT_PREFIX
 end
 
 def float?(value)
@@ -103,12 +113,6 @@ end
 
 def yomiage_end(serverid)
   $yomiage.delete(serverid)
-end
-
-def save
-  File.open(PREFIXDATA, 'w') do |file|
-    JSON.dump($prefixes, file)
-  end
 end
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
@@ -297,8 +301,15 @@ bot.command(:setprefix) do |event, pre|
   if event.author.permission?('administrator') == true
     return "prefixが入力されてないよ" if pre.nil?
     if pre.size <= 2
-      set_prefix(pre, event.server.id)
-      event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+      if (set_prefix_result = set_prefix(pre, event.server.id)) == true
+        event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+      else
+        message = ""
+        set_prefix_result.each do |msg|
+          message += "\n" + msg
+        end
+        event.respond("prefixの設定中にエラーが発生しました:" + message)
+      end
     else
       event.respond('prefixを二文字以内にしてください')
     end
@@ -316,14 +327,6 @@ bot.command(:botstop) do |event|
   end
 end
 
-bot.command(:save) do |event|
-  if event.user.id == OWNER_ID
-    save
-    event.respond('セーブ中です')
-  else
-    event.respond('このボットのオーナーじゃないためデータをセーブすることができません')
-  end
-end
 bot.command(:botinfo) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
