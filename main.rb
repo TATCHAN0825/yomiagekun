@@ -24,7 +24,7 @@ if error_count > 0
 end
 
 # デバッグモードの場合のみActiveRecordのログを表示する
-ActiveRecord::Base.logger = Logger.new(STDOUT) if ((DEBUG = ENV['DEBUG'].freeze) === "true")
+ActiveRecord::Base.logger = Logger.new(STDOUT) if ((DEBUG = ENV['DEBUG'].freeze) === 'true')
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
@@ -45,6 +45,13 @@ OWNER_ID = ENV['OWNER_ID'].to_i.freeze
 DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
 EVAL = ENV['EVAL'].freeze
 $yomiage = []
+$yomiagenow = [] # キュー消化中のリスト
+
+$queue = Hash.new do |hash, key|
+  hash[key] = []
+end
+
+
 
 # jsonのprefixからDBに移行
 if File.exist?(PREFIXDATA)
@@ -54,7 +61,7 @@ if File.exist?(PREFIXDATA)
     count += 1
   end
   File.rename(PREFIXDATA, MIGRATED_PREFIXDATA)
-  puts count.to_s + "件のprefixを移行しました"
+  puts count.to_s + '件のprefixを移行しました'
 end
 
 def set_prefix(pre, serverid)
@@ -93,9 +100,8 @@ def get_user_data(userid)
 end
 
 def register_user_data(userid)
-  voice = %w[mei takumi slt].sample
-  voiceemotion = {'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy],
-                  'slt' => ['normal']}
+  voice = %w[mei takumi].sample
+  voiceemotion = { 'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy], }
   emotion = voiceemotion[voice].sample
   User.create(id: userid, voice: voice, emotion: emotion, speed: 1.0, tone: 1.0)
 end
@@ -105,7 +111,7 @@ def user_data_exists?(userid)
 end
 
 def yomiage_exists?(serverid)
-  $yomiage[serverid].nil?
+  $yomiage.include?(serverid)
 end
 
 def yomiage_start(serverid)
@@ -115,6 +121,36 @@ end
 def yomiage_end(serverid)
   $yomiage.delete(serverid)
 end
+
+def yomiage_suru(event, msg, voice, userid, serverid)
+  $queue[serverid].push(msg)
+
+  unless $yomiagenow.include?(serverid) # キュー消化中でなかったら
+    $yomiagenow.push(serverid)
+    loop do
+      text = $queue[serverid].shift
+      yomiage(event, text, voice, userid, serverid)
+      if $queue[serverid].size == 0
+        $yomiagenow.delete(serverid)
+        break
+      end
+    end
+  end
+end
+
+def yomiage(event, msg, voice, userid, serverid)
+  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
+  user = get_user_data(userid)
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" +'.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
+  if s == true
+    #voice_bot = event.voice
+    voice.play_file(OUTPUT + '\v' + "#{serverid}" + '.wav')
+  else
+    event.respond('コマンド実行エラー')
+    p cmd
+  end
+end
+
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
 
@@ -136,16 +172,20 @@ bot.ready do |event|
 end
 bot.command(:start) do |event|
   channel = event.user.voice_channel
-  event.respond('ボイスチャット入ろうね!!'); return if channel.nil? == true
-  bot.voice_connect(channel)
-  yomiage_start(event.server.id)
-  event.channel.send_embed do |embed|
-    embed.title = event.server.bot.name
-    embed.description = "
+  if channel.nil? == true
+    event.respond('ボイスチャット入ろうね!!');
+  end
+  if channel.nil? == false
+    bot.voice_connect(channel)
+    yomiage_start(event.server.id)
+    event.channel.send_embed do |embed|
+      embed.title = event.server.bot.name
+      embed.description = "
 読み上げを開始します
 読み上げチャンネル #{channel.name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 "
+    end
   end
 end
 bot.command(:help) do |event|
@@ -154,18 +194,7 @@ bot.command(:help) do |event|
   end
 end
 
-def yomiage(msg, voice, useris, serverid)
-  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
-  user = get_user_data(userid)
-  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{event.server.id}.wav" + ' ' + INPUT + '\v' + "#{event.server.id}.txt")
-  if s == true
-    #voice_bot = event.voice
-    voice.play_file(OUTPUT + '\v' + "#{event.server.id}" + '.wav')
-  else
-    event.respond('コマンド実行エラー')
-    p cmd
-  end
-end
+
 
 bot.command(:getvoice) do |event|
   if user_data_exists?(event.user.id)
@@ -186,8 +215,8 @@ EOL
 end
 
 def emotion_included?(voice, emotion)
-  voiceemotion = {'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
-                  'slt' => ['normal']}
+  voiceemotion = { 'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
+                   'slt' => ['normal'] }
   voiceemotion[voice]&.include?(emotion)
 end
 
@@ -215,7 +244,7 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
-                                       "ただし、#{size.to_s}件の設定は保存できませんでした:\n" + messages : ''))
+                                     "ただし、#{size.to_s}件の設定は保存できませんでした:\n" + messages : ''))
   else
     event.respond('設定を保存できませんでした')
   end
@@ -238,7 +267,7 @@ bot.command(:emotionlist) do |event|
   event.channel.send_embed do |embed|
     embed.title = '感情リスト'
     embed.description = "
-    mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]\n slt [normal]
+    mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]
 "
   end
 end
@@ -246,24 +275,22 @@ bot.command(:voicelist) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボイスリスト'
     embed.description = "
-    mei\ntakumi　\n slt
+    mei\ntakumi
 "
   end
 end
-=begin
-bot.message(contains: "") do |event|
-  if yomiage_is?(event.server.id)
 
-    if event.user.voice_channel.nil? == false
-      if user_data_is?(event.user.id)
-
+bot.message(contains: '') do |event|
+  if yomiage_exists?(event.server.id) == true
+    if user_data_exists?(event.user.id) == true
+      if event.user.voice_channel.nil? == false
+        yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
       else
         register_user_data(event.user.id)
       end
     end
   end
 end
-=end
 
 bot.command(:volume) do |event, vol|
   if float?(vol)
@@ -297,7 +324,7 @@ bot.command(:stop) do |event|
 end
 bot.command(:setprefix) do |event, pre|
   if event.author.permission?('administrator') == true
-    return "prefixが入力されてないよ" if pre.nil?
+    return 'prefixが入力されてないよ' if pre.nil?
     if pre.size <= 2
       if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
         event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
