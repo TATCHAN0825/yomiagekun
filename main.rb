@@ -177,11 +177,11 @@ bot.command(:start) do |event|
     yomiage_start(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = "
+      embed.description = <<EOL
 読み上げを開始します
 読み上げチャンネル #{channel.name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-"
+EOL
     end
   end
 end
@@ -261,17 +261,17 @@ end
 bot.command(:emotionlist) do |event|
   event.channel.send_embed do |embed|
     embed.title = '感情リスト'
-    embed.description = "
+    embed.description = <<EOL
     mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]
-"
+EOL
   end
 end
 bot.command(:voicelist) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボイスリスト'
-    embed.description = "
+    embed.description = <<EOL
     mei\ntakumi
-"
+EOL
   end
 end
 
@@ -310,10 +310,10 @@ bot.command(:stop) do |event|
     yomiage_end(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = "
+      embed.description = <<EOL
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-"
+EOL
     end
   end
 end
@@ -346,7 +346,7 @@ end
 bot.command(:botinfo) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
-    embed.description = "
+    embed.description = <<EOL
 SERVERS
 #{bot.servers.size}
 USERS
@@ -359,7 +359,7 @@ PREFIX
 #{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}
 ホスト者
 #{bot.user(OWNER_ID).username}##{bot.user(OWNER_ID).discrim}
-"
+EOL
   end
 end
 bot.run
