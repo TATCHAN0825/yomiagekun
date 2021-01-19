@@ -50,6 +50,7 @@ $yomiagenow = [] # キュー消化中のリスト
 $queue = Hash.new do |hash, key|
   hash[key] = []
 end
+$yomiage_target_channel = Hash.new { |h, k| h[k] = [] }
 
 # jsonのprefixからDBに移行
 if File.exist?(PREFIXDATA)
@@ -139,7 +140,7 @@ end
 def yomiage(event, msg, voice, userid, serverid)
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   user = get_user_data(userid)
-  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" +'.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
     #voice_bot = event.voice
     voice.play_file(OUTPUT + '\v' + "#{serverid}" + '.wav')
@@ -148,6 +149,7 @@ def yomiage(event, msg, voice, userid, serverid)
     p cmd
   end
 end
+
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
 
@@ -177,11 +179,11 @@ bot.command(:start) do |event|
     yomiage_start(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = <<EOL
+      embed.description = "
 読み上げを開始します
 読み上げチャンネル #{channel.name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-EOL
+"
     end
   end
 end
@@ -190,6 +192,8 @@ bot.command(:help) do |event|
 
   end
 end
+
+
 
 bot.command(:getvoice) do |event|
   if user_data_exists?(event.user.id)
@@ -261,17 +265,17 @@ end
 bot.command(:emotionlist) do |event|
   event.channel.send_embed do |embed|
     embed.title = '感情リスト'
-    embed.description = <<EOL
+    embed.description = "
     mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]
-EOL
+"
   end
 end
 bot.command(:voicelist) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボイスリスト'
-    embed.description = <<EOL
+    embed.description = "
     mei\ntakumi
-EOL
+"
   end
 end
 
@@ -310,10 +314,10 @@ bot.command(:stop) do |event|
     yomiage_end(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = <<EOL
+      embed.description = "
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-EOL
+"
     end
   end
 end
@@ -346,7 +350,7 @@ end
 bot.command(:botinfo) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
-    embed.description = <<EOL
+    embed.description = "
 SERVERS
 #{bot.servers.size}
 USERS
@@ -359,7 +363,7 @@ PREFIX
 #{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}
 ホスト者
 #{bot.user(OWNER_ID).username}##{bot.user(OWNER_ID).discrim}
-EOL
+"
   end
 end
 bot.run
