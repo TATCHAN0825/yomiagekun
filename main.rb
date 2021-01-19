@@ -24,7 +24,7 @@ if error_count > 0
 end
 
 # デバッグモードの場合のみActiveRecordのログを表示する
-ActiveRecord::Base.logger = Logger.new(STDOUT) if ((DEBUG = ENV['DEBUG'] === true).freeze)
+ActiveRecord::Base.logger = Logger.new(STDOUT) if ((DEBUG = ENV['DEBUG'].freeze) === "true")
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
