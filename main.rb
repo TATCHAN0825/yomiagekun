@@ -361,7 +361,10 @@ PREFIX
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
-#{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}"
+#{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}
+ホスト者
+#{bot.user(OWNER_ID).username}##{bot.user(OWNER_ID).discrim}
+"
   end
 end
 bot.run
