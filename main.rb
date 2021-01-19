@@ -172,16 +172,22 @@ end
 bot.command(:start) do |event|
   channel = event.user.voice_channel
   if channel.nil? == true
-    event.respond('ボイスチャット入ろうね!!');
+    event.respond('ボイスチャット入ろうね!!')
   end
   if channel.nil? == false
+    name = []
     bot.voice_connect(channel)
     yomiage_start(event.server.id)
+    $yomiage_target_channel[event.server.id].push(event.channel.id)
+    $yomiage_target_channel[event.server.id].each do |id|
+      name.push("<##{id}>")
+    end
+    name = name.join(",")
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
       embed.description = "
 読み上げを開始します
-読み上げチャンネル #{channel.name}
+読み上げ対象チャンネル#{name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 "
     end
@@ -284,6 +290,9 @@ bot.message(contains: '') do |event|
     if user_data_exists?(event.user.id) == true
       if event.user.voice_channel.nil? == false
         yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+        if $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
+          yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+        end
       else
         register_user_data(event.user.id)
       end
@@ -312,6 +321,7 @@ bot.command(:stop) do |event|
   else
     event.voice.destroy
     yomiage_end(event.server.id)
+    $yomiage_target_channel.delete(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
       embed.description = "
