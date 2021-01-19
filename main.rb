@@ -140,7 +140,7 @@ end
 def yomiage(event, msg, voice, userid, serverid)
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   user = get_user_data(userid)
-  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" +'.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
+  s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
     #voice_bot = event.voice
     voice.play_file(OUTPUT + '\v' + "#{serverid}" + '.wav')
@@ -149,7 +149,6 @@ def yomiage(event, msg, voice, userid, serverid)
     p cmd
   end
 end
-
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
 
@@ -198,8 +197,6 @@ bot.command(:help) do |event|
 
   end
 end
-
-
 
 bot.command(:getvoice) do |event|
   if user_data_exists?(event.user.id)
@@ -373,7 +370,7 @@ PREFIX
 #{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}
 ホスト者
 #{bot.user(OWNER_ID).username}##{bot.user(OWNER_ID).discrim}
-"
+    "
   end
 end
 bot.run
