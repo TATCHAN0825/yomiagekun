@@ -122,8 +122,10 @@ def yomiage_end(serverid)
 end
 
 def yomiage_suru(event, msg, voice, userid, serverid)
+  if URI::DEFAULT_PARSER.make_regexp.match(msg).nil? == false
+    msg = "url省略"
+  end
   $queue[serverid].push(msg)
-
   unless $yomiagenow.include?(serverid) # キュー消化中でなかったら
     $yomiagenow.push(serverid)
     loop do
@@ -154,17 +156,9 @@ bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_pr
 
 previous = Date.today
 bot.disconnected do |_event|
-  save
   puts 'ボットが停止しています'
 end
-bot.heartbeat do |_event|
-  now = Date.today
-  if previous < now
-    save
-    puts 'セーブしています'
-    previous = now
-  end
-end
+
 bot.ready do |event|
   bot.game = "#{DEFAULT_PREFIX}help"
 end
@@ -286,7 +280,6 @@ bot.message(contains: '') do |event|
   if yomiage_exists?(event.server.id) == true
     if user_data_exists?(event.user.id) == true
       if event.user.voice_channel.nil? == false
-        yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
         if $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
           yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
         end
