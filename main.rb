@@ -276,7 +276,7 @@ bot.command(:voicelist) do |event|
   end
 end
 
-bot.message(contains: '') do |event|
+bot.message do |event|
   if yomiage_exists?(event.server.id) == true
     if user_data_exists?(event.user.id) == true
       if event.user.voice_channel.nil? == false
