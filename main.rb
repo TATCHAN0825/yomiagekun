@@ -184,11 +184,11 @@ bot.command(:start) do |event|
     name = name.join(",")
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = "
+      embed.description = <<EOL
 読み上げを開始します
 読み上げ対象チャンネル#{name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-"
+EOL
     end
   end
 end
@@ -321,10 +321,10 @@ bot.command(:stop) do |event|
     $yomiage_target_channel.delete(event.server.id)
     event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
-      embed.description = "
+      embed.description = <<EOL
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
-"
+EOL
     end
   end
 end
@@ -357,7 +357,7 @@ end
 bot.command(:botinfo) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
-    embed.description = "
+    embed.description = <<EOL
 SERVERS
 #{bot.servers.size}
 USERS
@@ -370,7 +370,7 @@ PREFIX
 #{bot.user(341902175120785419).username}##{bot.user(341902175120785419).discrim},#{bot.user(443427652951474177).username}##{bot.user(443427652951474177).discrim}
 ホスト者
 #{bot.user(OWNER_ID).username}##{bot.user(OWNER_ID).discrim}
-    "
+EOL
   end
 end
 bot.run
