@@ -284,9 +284,9 @@ bot.message do |event|
         if $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
           yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
         end
-      else
-        register_user_data(event.user.id)
       end
+    else
+      register_user_data(event.user.id)
     end
   end
 end
