@@ -62,12 +62,24 @@ if File.exist?(PREFIXDATA)
   File.rename(PREFIXDATA, MIGRATED_PREFIXDATA)
   puts count.to_s + '件のprefixを移行しました'
 end
-def add_jisyo(serverid,before,after)
-    Dictionary.create(id: serverid,before: before, after: after)
+
+def add_jisyo(serverid, before, after)
+  Dictionary.create(serverid: serverid, before: before, after: after)
 end
-def jisyo(serverid,before)
-  Dictionary.find_by(id:serverid,before:before)
+
+def get_jisyo_all(serverid)
+  Dictionary.where(serverid: serverid)
 end
+
+# 辞書の通り置換されたメッセージ返す
+def jisyo_replace(serverid, message)
+  # TODO: MySQLでは結合にconcatを使うけど..。
+  (Dictionary.where(serverid: serverid).where('? LIKE "%"||before||"%"', message)).each do |dictionary|
+    message = message.gsub(dictionary.before, dictionary.after)
+  end
+  message
+end
+
 def set_prefix(pre, serverid)
   if (prefix_model = Prefix.find_by(id: serverid)).nil?
     Prefix.create(id: serverid, prefix: pre) || prefix_model.errors.full_messages
@@ -134,7 +146,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
   unless $yomiagenow.include?(serverid) # キュー消化中でなかったら
     $yomiagenow.push(serverid)
     loop do
-      text = $queue[serverid].shift
+      text = jisyo_replace(serverid, $queue[serverid].shift)
       yomiage(event, text, voice, userid, serverid)
       if $queue[serverid].size == 0
         $yomiagenow.delete(serverid)
@@ -158,7 +170,6 @@ def yomiage(event, msg, voice, userid, serverid)
 end
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
-
 
 bot.ready do |event|
   bot.game = "#{DEFAULT_PREFIX}help"
@@ -274,6 +285,26 @@ bot.command(:voicelist) do |event|
     embed.description = "
     mei\ntakumi
 "
+  end
+end
+
+bot.command(:addword) do |event, before, after|
+  unless event.author.permission?('administrator') == true
+    event.respond('サーバーの管理者しか実行できません')
+    break
+  end
+  add_jisyo(event.server.id, before, after)
+  event.respond('辞書に追加しました')
+end
+
+bot.command(:wordlist) do |event|
+  words_list_string = ""
+  get_jisyo_all(event.server.id).each do |dictionary|
+    words_list_string += "\n#{dictionary.before} => #{dictionary.after}"
+  end
+  event.channel.send_embed do |embed|
+    embed.title = 'ワードリスト'
+    embed.description = words_list_string
   end
 end
 
