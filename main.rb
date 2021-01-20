@@ -154,10 +154,6 @@ end
 
 bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_proc)
 
-previous = Date.today
-bot.disconnected do |_event|
-  puts 'ボットが停止しています'
-end
 
 bot.ready do |event|
   bot.game = "#{DEFAULT_PREFIX}help"
@@ -339,7 +335,6 @@ bot.command(:setprefix) do |event, pre|
 end
 bot.command(:botstop) do |event|
   if event.user.id == OWNER_ID
-    save
     event.respond('ボットを停止中です')
     event.bot.stop
   else
