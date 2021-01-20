@@ -68,6 +68,13 @@ def add_jisyo(serverid, before, after)
   Dictionary.create(serverid: serverid, before: before, after: after)
 end
 
+def remove_jisyo(serverid, before)
+  if (dict = Dictionary.find_by(serverid: serverid, before: before)).nil?
+    return false
+  end
+  dict.destroy
+end
+
 def get_jisyo_all(serverid)
   Dictionary.where(serverid: serverid)
 end
@@ -296,6 +303,18 @@ bot.command(:addword) do |event, before, after|
   end
   add_jisyo(event.server.id, before, after)
   event.respond('辞書に追加しました')
+end
+
+bot.command(:removeword) do |event, before|
+  unless event.author.permission?('administrator') == true
+    event.respond('サーバーの管理者しか実行できません')
+    break
+  end
+  if remove_jisyo(event.server.id, before) === false
+    event.respond('存在しません')
+  else
+    event.respond("`#{before}`を辞書から削除しました")
+  end
 end
 
 bot.command(:wordlist) do |event|
