@@ -5,7 +5,7 @@ require 'sqlite3'
 require './db/connect'
 require './models/user'
 require './models/prefix'
-
+require './models/dictionary'
 Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
@@ -62,7 +62,12 @@ if File.exist?(PREFIXDATA)
   File.rename(PREFIXDATA, MIGRATED_PREFIXDATA)
   puts count.to_s + '件のprefixを移行しました'
 end
-
+def add_jisyo(serverid,before,after)
+    Dictionary.create(id: serverid,before: before, after: after)
+end
+def jisyo(serverid,before)
+  Dictionary.find_by(id:serverid,before:before)
+end
 def set_prefix(pre, serverid)
   if (prefix_model = Prefix.find_by(id: serverid)).nil?
     Prefix.create(id: serverid, prefix: pre) || prefix_model.errors.full_messages
