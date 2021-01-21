@@ -23,7 +23,7 @@ if error_count > 0
   exit
 end
 
-DEBUG = true
+DEBUG_ACTIVERECORD_LOG = false
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
@@ -46,8 +46,7 @@ EVAL = ENV['EVAL'].freeze
 $yomiage = []
 $yomiagenow = [] # キュー消化中のリスト
 
-# デバッグモードの場合のみActiveRecordのログを表示する
-ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG
+ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
 
 $queue = Hash.new do |hash, key|
   hash[key] = []
