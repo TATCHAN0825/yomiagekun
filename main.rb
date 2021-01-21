@@ -82,7 +82,8 @@ end
 # 辞書の通り置換されたメッセージ返す
 def jisyo_replace(serverid, message)
   # TODO: MySQLでは結合にconcatを使うけど..。
-  (Dictionary.where(serverid: serverid).where('? LIKE "%"||before||"%"', message)).each do |dictionary|
+  dictionaries = Dictionary.where(serverid: serverid).where('? LIKE "%"||before||"%"', message).order('length(before) DESC')
+  dictionaries.each do |dictionary|
     message = message.gsub(dictionary.before, dictionary.after)
   end
   message
