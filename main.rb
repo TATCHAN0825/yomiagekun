@@ -196,6 +196,10 @@ bot.command(:start) do |event|
     event.respond('ボイスチャット入ろうね!!')
   end
   if channel.nil? == false
+    if $yomiage_target_channel[event.server.id].include?(event.channel.id)
+      event.respond('このチャンネルはすでに読み上げ対象です')
+      break
+    end
     name = []
     bot.voice_connect(channel)
     yomiage_start(event.server.id)
