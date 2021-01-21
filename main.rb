@@ -157,10 +157,12 @@ def yomiage_suru(event, msg, voice, userid, serverid)
   unless $yomiagenow.include?(serverid) # キュー消化中でなかったら
     $yomiagenow.push(serverid)
     loop do
-      text = jisyo_replace(serverid, $queue[serverid].shift)
-      event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
-      yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
-      if $queue[serverid].size == 0
+      if yomiage_exists?(serverid)
+        text = jisyo_replace(serverid, $queue[serverid].shift)
+        event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
+        yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
+      end
+      if $queue[serverid].size == 0 or !(yomiage_exists?(serverid))
         $yomiagenow.delete(serverid)
         break
       end
