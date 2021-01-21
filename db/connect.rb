@@ -4,6 +4,7 @@ require './db/migrate/initial_schema'
 require './db/migrate/create_prefixes'
 require './db/migrate/create_dictionaries'
 require './db/migrate/add_serverid_to_dictionaries'
+require './db/migrate/create_emojis'
 require './models/dictionary'
 
 ActiveRecord::Base.establish_connection(YAML.load_file("./config/database.yml"))
@@ -31,4 +32,9 @@ begin
 rescue ActiveModel::UnknownAttributeError
   puts "dictionariesテーブルにserveridカラムが存在しないためマイグレーションを行います..."
   AddServeridToDictionaries::migrate(:up)
+end
+
+unless ActiveRecord::Base.connection.table_exists?('emojis')
+  puts "emojisテーブルが存在しないためマイグレーションを行います..."
+  CreateEmojis::migrate(:up)
 end

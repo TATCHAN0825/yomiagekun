@@ -6,6 +6,7 @@ require './db/connect'
 require './models/user'
 require './models/prefix'
 require './models/dictionary'
+require './models/emoji'
 Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
@@ -64,6 +65,19 @@ if File.exist?(PREFIXDATA)
   puts count.to_s + '件のprefixを移行しました'
 end
 
+# 絵文字DB
+if Emoji.count < 1
+  add_count = 0
+
+  emojis = JSON.load(File.new("./resources/emoji_ja.json"))
+  emojis.each do |character, meta|
+    Emoji.create(character: character, read: meta["short_name"])
+    add_count += 1
+  end
+
+  puts add_count.to_s + "個の絵文字を登録しました"
+end
+
 def add_jisyo(serverid, before, after)
   Dictionary.create(serverid: serverid, before: before, after: after)
 end
@@ -85,6 +99,10 @@ def jisyo_replace(serverid, message)
   dictionaries = Dictionary.where(serverid: serverid).where('? LIKE "%"||before||"%"', message).order('length(before) DESC')
   dictionaries.each do |dictionary|
     message = message.gsub(dictionary.before, dictionary.after)
+  end
+  emojis = Emoji.where('? LIKE "%"||character||"%"', message)
+  emojis.each do |emoji|
+    message = message.gsub(emoji.character, emoji.read)
   end
   message
 end
