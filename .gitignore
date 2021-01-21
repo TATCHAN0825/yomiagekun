@@ -2,6 +2,7 @@
 /config.env
 /user.db
 /db/*.db
+/open_jtalk/
 
 # legacy
 /.env
