@@ -24,6 +24,8 @@ if error_count > 0
 end
 
 DEBUG_ACTIVERECORD_LOG = false
+DEBUG_SEND_YOMIAGE = false
+DEBUG_DISABLE_TALK = false
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
@@ -156,7 +158,8 @@ def yomiage_suru(event, msg, voice, userid, serverid)
     $yomiagenow.push(serverid)
     loop do
       text = jisyo_replace(serverid, $queue[serverid].shift)
-      yomiage(event, text, voice, userid, serverid)
+      event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
+      yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
       if $queue[serverid].size == 0
         $yomiagenow.delete(serverid)
         break
