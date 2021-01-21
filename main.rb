@@ -50,9 +50,7 @@ $yomiagenow = [] # キュー消化中のリスト
 
 ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
 
-$queue = Hash.new do |hash, key|
-  hash[key] = []
-end
+$queue = Hash.new { |h, k| h[k] = [] }
 $yomiage_target_channel = Hash.new { |h, k| h[k] = [] }
 
 # jsonのprefixからDBに移行
