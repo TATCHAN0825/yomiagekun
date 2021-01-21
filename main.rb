@@ -9,7 +9,7 @@ require './models/dictionary'
 Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
-DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL', 'DEBUG'].freeze
+DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL'].freeze
 
 error_count = 0
 DOTENV_REQUIRED.each do |required|
@@ -23,7 +23,8 @@ if error_count > 0
   exit
 end
 
-DEBUG = (ENV['DEBUG'] === 'true').freeze
+DEBUG = true
+
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
 MIGRATED_PREFIXDATA = DATA + '\migrated_prefix.json'.freeze
