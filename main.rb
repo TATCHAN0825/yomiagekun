@@ -19,7 +19,7 @@ DOTENV_REQUIRED.each do |required|
     puts "config.envに#{required}が無いよ"
   end
 end
-if error_count > 0
+if error_count.positive?
   puts 'config_sample.envを参考にconfig.envを編集してください'
   exit
 end
@@ -48,7 +48,6 @@ DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
 EVAL = ENV['EVAL'].freeze
 $yomiage = []
 $yomiagenow = [] # キュー消化中のリスト
-
 ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
 
 $queue = Hash.new { |h, k| h[k] = [] }
@@ -182,7 +181,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
           event.respond("読み上げ中にエラーが発生したよ: " + e.message)
         end
       end
-      if $queue[serverid].size == 0 or !(yomiage_exists?(serverid))
+      if $queue[serverid].size.zero? or !(yomiage_exists?(serverid))
         $yomiagenow.delete(serverid)
         break
       end
@@ -289,7 +288,7 @@ bot.command(:setvoice) do |event, voice, emotion, speed, tone|
   messages = error_messages.join("\n")
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
-    event.respond("設定を保存しました\n" + ((size = error_messages.size) > 0 ?
+    event.respond("設定を保存しました\n" + ((size = error_messages.size).positive? ?
                                      "ただし、#{size.to_s}件の設定は保存できませんでした:\n" + messages : ''))
   else
     event.respond('設定を保存できませんでした')
@@ -368,10 +367,27 @@ bot.message do |event|
       end
     else
       register_user_data(event.user.id)
+      event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
     end
   end
 end
+bot.voice_state_update do |event|
+  if event.channel.nil?
+    if event.old_channel.users.size == 1
+      $yomiage_target_channel[event.server.id].each do |id|
+        channel = event.bot.channel(id, event.server.id)
+        embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
+        embed.description = "人がいなくなったため\n読み上げを終了してします\n使い方は#{get_prefix(event.server.id)}helpを参考にしてください"
+        event.bot.send_message(channel, content:"", embed: embed)
 
+        end
+      event.bot.voices[event.server.id].destroy
+      yomiage_end(event.server.id)
+      $yomiage_target_channel.delete(event.server.id)
+
+    end
+  end
+end
 bot.command(:volume) do |event, vol|
   if float?(vol)
     if vol.to_f <= 150 && vol.to_f >= 0
