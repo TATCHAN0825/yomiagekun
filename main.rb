@@ -378,9 +378,8 @@ bot.voice_state_update do |event|
         channel = event.bot.channel(id, event.server.id)
         embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
         embed.description = "人がいなくなったため\n読み上げを終了してします\n使い方は#{get_prefix(event.server.id)}helpを参考にしてください"
-        event.bot.send_message(channel,"",false,embed)
-
-        end
+        event.bot.send_message(channel, "", false, embed)
+      end
       event.bot.voices[event.server.id].destroy
       yomiage_end(event.server.id)
       $yomiage_target_channel.delete(event.server.id)
