@@ -406,6 +406,25 @@ bot.voice_state_update do |event|
       $yomiage_target_channel.delete(event.server.id)
 
     end
+
+    botgairu = false
+    event.old_channel.users.each do |user|
+      if user.current_bot? == true
+        botgairu = true
+      end
+    end
+
+    if botgairu == false
+      $yomiage_target_channel[event.server.id].each do |id|
+        channel = event.bot.channel(id, event.server.id)
+        embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
+        embed.description = "botが堕ちました"
+        event.bot.send_message(channel, "", false, embed)
+        yomiage_end(event.server.id)
+        $yomiage_target_channel.delete(event.server.id)
+      end
+    end
+
   end
 end
 
