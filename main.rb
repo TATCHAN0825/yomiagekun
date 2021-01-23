@@ -270,7 +270,9 @@ end
 bot.command(
   :setvoice,
   description: 'ボイスを設定する',
-  usage: 'setvoice <声質> <感情> <速さ> <高さ>'
+  usage: 'setvoice <声質> <感情> <速さ> <高さ>',
+  arg_types: [String, String, Float, Float],
+  min_args: 1 #TODO: どうしよ
 ) do |event, voice, emotion, speed, tone|
   error_messages = []
 
@@ -282,12 +284,10 @@ bot.command(
     emotion = nil
     error_messages << "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
   end
-  unless float?(speed)
-    speed = nil
+  if speed.nil?
     error_messages << 'speedは数値にしてね'
   end
-  unless float?(tone)
-    tone = nil
+  if tone.nil?
     error_messages << 'toneは数値にしてね'
   end
 
@@ -348,7 +348,9 @@ end
 bot.command(
   :addword,
   description: '単語を追加する',
-  usage: 'addword <単語> <読み>'
+  usage: 'addword <単語> <読み>',
+  arg_types: [String, String],
+  min_args: 2
 ) do |event, before, after|
   unless event.author.permission?('administrator') == true
     event.respond('サーバーの管理者しか実行できません')
@@ -361,7 +363,9 @@ end
 bot.command(
   :removeword,
   description: '単語を削除する',
-  usage: 'removeword <単語>'
+  usage: 'removeword <単語>',
+  arg_types: [String],
+  min_args: 1
 ) do |event, before|
   unless event.author.permission?('administrator') == true
     event.respond('サーバーの管理者しか実行できません')
@@ -423,19 +427,20 @@ end
 bot.command(
   :volume,
   description: '音量を設定する',
-  usage: 'volume <音量>'
+  usage: 'volume <音量>',
+  arg_types: [Float],
+  min_args: 1
 ) do |event, vol|
-  if float?(vol)
-    if vol.to_f <= 150 && vol.to_f >= 0
+  if vol.nil?
+    event.respond('数字を入力してね')
+  else
+    if vol <= 150 && vol >= 0
       voice_bot = event.voice
       voice_bot.filter_volume = vol
       event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
     else
       event.respond('ボリュームを0から150の間で入力してください')
     end
-  else
-
-    event.respond('数字を入力してね')
   end
 end
 
@@ -462,10 +467,12 @@ end
 bot.command(
   :setprefix,
   description: 'プレフィックスを設定する',
-  usage: 'setprefix <プレフィックス>'
+  usage: 'setprefix <プレフィックス>',
+  arg_types: [String],
+  min_args: 1
 ) do |event, pre|
   if event.author.permission?('administrator') == true
-    return 'prefixが入力されてないよ' if pre.nil?
+    return 'prefixが不正だよ' if pre.nil?
     if pre.size <= 2
       if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
         event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
