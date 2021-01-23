@@ -24,9 +24,9 @@ if error_count.positive?
   exit
 end
 
-DEBUG_ACTIVERECORD_LOG = false
-DEBUG_SEND_YOMIAGE = false
-DEBUG_DISABLE_TALK = false
+DEBUG_ACTIVERECORD_LOG = (ENV["DEBUG_ACTIVERECORD_LOG"] || false) == 'true'
+DEBUG_SEND_YOMIAGE = (ENV["DEBUG_SEND_YOMIAGE"] || false) == 'true'
+DEBUG_DISABLE_TALK = (ENV["DEBUG_DISABLE_TALK"] || false) == 'true'
 
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
