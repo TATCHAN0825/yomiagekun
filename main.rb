@@ -207,7 +207,11 @@ bot = Discordrb::Commands::CommandBot.new(token: ENV['TOKEN'], prefix: prefix_pr
 bot.ready do |event|
   bot.game = "#{DEFAULT_PREFIX}help"
 end
-bot.command(:start, description: '読み上げを開始する') do |event|
+
+bot.command(
+  :start,
+  description: '読み上げを開始する'
+) do |event|
   channel = event.user.voice_channel
   if channel.nil? == true
     event.respond('ボイスチャット入ろうね!!')
@@ -236,7 +240,10 @@ EOL
   end
 end
 
-bot.command(:getvoice, description: 'ボイス設定を表示する') do |event|
+bot.command(
+  :getvoice,
+  description: 'ボイス設定を表示する'
+) do |event|
   if user_data_exists?(event.user.id)
     user = get_user_data(event.user.id)
     event.channel.send_embed do |embed|
@@ -260,7 +267,11 @@ def emotion_included?(voice, emotion)
   voiceemotion[voice]&.include?(emotion)
 end
 
-bot.command(:setvoice, description: 'ボイスを設定する', usage: 'setvoice <声質> <感情> <速さ> <高さ>') do |event, voice, emotion, speed, tone|
+bot.command(
+  :setvoice,
+  description: 'ボイスを設定する',
+  usage: 'setvoice <声質> <感情> <速さ> <高さ>'
+) do |event, voice, emotion, speed, tone|
   error_messages = []
 
   unless VOICES.include?(voice)
@@ -289,7 +300,13 @@ bot.command(:setvoice, description: 'ボイスを設定する', usage: 'setvoice
     event.respond('設定を保存できませんでした')
   end
 end
-bot.command(:eval, help_available: false, description: 'コードを評価する', usage: 'eval <コード>') do |event, *code|
+
+bot.command(
+  :eval,
+  help_available: false,
+  description: 'コードを評価する',
+  usage: 'eval <コード>'
+) do |event, *code|
 
   if EVAL == 'true'
     break unless event.user.id == OWNER_ID # Replace number with your ID
@@ -303,7 +320,11 @@ bot.command(:eval, help_available: false, description: 'コードを評価する
     event.respond("許可されていません\nconfig.envのEVALをtrueに変更してください")
   end
 end
-bot.command(:emotionlist, description: '感情リストを表示する') do |event|
+
+bot.command(
+  :emotionlist,
+  description: '感情リストを表示する'
+) do |event|
   event.channel.send_embed do |embed|
     embed.title = '感情リスト'
     embed.description = "
@@ -311,7 +332,11 @@ bot.command(:emotionlist, description: '感情リストを表示する') do |eve
 "
   end
 end
-bot.command(:voicelist, description: 'ボイスリストを表示する') do |event|
+
+bot.command(
+  :voicelist,
+  description: 'ボイスリストを表示する'
+) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボイスリスト'
     embed.description = "
@@ -320,7 +345,11 @@ bot.command(:voicelist, description: 'ボイスリストを表示する') do |ev
   end
 end
 
-bot.command(:addword, description: '単語を追加する', usage: 'addword <単語> <読み>') do |event, before, after|
+bot.command(
+  :addword,
+  description: '単語を追加する',
+  usage: 'addword <単語> <読み>'
+) do |event, before, after|
   unless event.author.permission?('administrator') == true
     event.respond('サーバーの管理者しか実行できません')
     break
@@ -329,7 +358,11 @@ bot.command(:addword, description: '単語を追加する', usage: 'addword <単
   event.respond('辞書に追加しました')
 end
 
-bot.command(:removeword, description: '単語を削除する', usage: 'removeword 単語') do |event, before|
+bot.command(
+  :removeword,
+  description: '単語を削除する',
+  usage: 'removeword 単語'
+) do |event, before|
   unless event.author.permission?('administrator') == true
     event.respond('サーバーの管理者しか実行できません')
     break
@@ -341,7 +374,10 @@ bot.command(:removeword, description: '単語を削除する', usage: 'removewor
   end
 end
 
-bot.command(:wordlist, description: '単語リストを表示する') do |event|
+bot.command(
+  :wordlist,
+  description: '単語リストを表示する'
+) do |event|
   words_list_string = ""
   get_jisyo_all(event.server.id).each do |dictionary|
     words_list_string += "\n#{dictionary.before} => #{dictionary.after}"
@@ -366,6 +402,7 @@ bot.message do |event|
     end
   end
 end
+
 bot.voice_state_update do |event|
   if event.channel.nil?
     if event.old_channel.users.size == 1
@@ -382,7 +419,12 @@ bot.voice_state_update do |event|
     end
   end
 end
-bot.command(:volume, description: '音量を設定する', usage: 'volume <音量>') do |event, vol|
+
+bot.command(
+  :volume,
+  description: '音量を設定する',
+  usage: 'volume <音量>'
+) do |event, vol|
   if float?(vol)
     if vol.to_f <= 150 && vol.to_f >= 0
       voice_bot = event.voice
@@ -397,7 +439,10 @@ bot.command(:volume, description: '音量を設定する', usage: 'volume <音�
   end
 end
 
-bot.command(:stop, description: '読み上げを終了する') do |event|
+bot.command(
+  :stop,
+  description: '読み上げを終了する'
+) do |event|
   if event.user.voice_channel.nil? == true
     event.respond('ボイスチャット入っていません')
   else
@@ -413,7 +458,12 @@ EOL
     end
   end
 end
-bot.command(:setprefix, description: 'プレフィックスを設定する', usage: 'setprefix <プレフィックス>') do |event, pre|
+
+bot.command(
+  :setprefix,
+  description: 'プレフィックスを設定する',
+  usage: 'setprefix <プレフィックス>'
+) do |event, pre|
   if event.author.permission?('administrator') == true
     return 'prefixが入力されてないよ' if pre.nil?
     if pre.size <= 2
@@ -429,7 +479,11 @@ bot.command(:setprefix, description: 'プレフィックスを設定する', usa
     event.respond('サーバーの管理者しか実行できません')
   end
 end
-bot.command(:botstop, description: 'ボットを停止する') do |event|
+
+bot.command(
+  :botstop,
+  description: 'ボットを停止する'
+) do |event|
   if event.user.id == OWNER_ID
     event.respond('ボットを停止中です')
     event.bot.stop
@@ -438,7 +492,10 @@ bot.command(:botstop, description: 'ボットを停止する') do |event|
   end
 end
 
-bot.command(:botinfo, description: 'ボットの詳細を表示する') do |event|
+bot.command(
+  :botinfo,
+  description: 'ボットの詳細を表示する'
+) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
     embed.description = <<EOL
