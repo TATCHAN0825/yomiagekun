@@ -416,6 +416,7 @@ bot.command(
   arg_types: [Float],
   min_args: 1
 ) do |event, vol|
+  return '先に読み上げを開始してください' if event.voice.nil?
   return '数字を入力してね' if vol.nil?
   if vol <= 150 && vol >= 0
     voice_bot = event.voice
