@@ -396,7 +396,9 @@ bot.message do |event|
   if yomiage_exists?(event.server.id) == true
     if user_data_exists?(event.user.id) == true
       if $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
-        yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+        unless event.content.start_with?(";")
+          yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+        end
       end
     else
       register_user_data(event.user.id)
