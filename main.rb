@@ -213,30 +213,23 @@ bot.command(
   description: '読み上げを開始する'
 ) do |event|
   channel = event.user.voice_channel
-  if channel.nil? == true
-    event.respond('ボイスチャット入ろうね!!')
+  return 'ボイスチャット入ろうね!!' if channel.nil? == true
+  return 'このチャンネルはすでに読み上げ対象です' if $yomiage_target_channel[event.server.id].include?(event.channel.id)
+  name = []
+  bot.voice_connect(channel)
+  yomiage_start(event.server.id)
+  $yomiage_target_channel[event.server.id].push(event.channel.id)
+  $yomiage_target_channel[event.server.id].each do |id|
+    name.push("<##{id}>")
   end
-  if channel.nil? == false
-    if $yomiage_target_channel[event.server.id].include?(event.channel.id)
-      event.respond('このチャンネルはすでに読み上げ対象です')
-      break
-    end
-    name = []
-    bot.voice_connect(channel)
-    yomiage_start(event.server.id)
-    $yomiage_target_channel[event.server.id].push(event.channel.id)
-    $yomiage_target_channel[event.server.id].each do |id|
-      name.push("<##{id}>")
-    end
-    name = name.join(",")
-    event.channel.send_embed do |embed|
-      embed.title = event.server.bot.name
-      embed.description = <<EOL
+  name = name.join(",")
+  event.channel.send_embed do |embed|
+    embed.title = event.server.bot.name
+    embed.description = <<EOL
 読み上げを開始します
 読み上げ対象チャンネル#{name}
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
-    end
   end
 end
 
@@ -307,17 +300,13 @@ bot.command(
   description: 'コードを評価する',
   usage: 'eval <コード>'
 ) do |event, *code|
-
-  if EVAL == 'true'
-    break unless event.user.id == OWNER_ID # Replace number with your ID
-    begin
-      event.respond eval code.join(' ')
-    rescue
-      "エラーが発生しました。
+  break unless event.user.id == OWNER_ID # Replace number with your ID
+  return "許可されていません\nconfig.envのEVALをtrueに変更してください" unless EVAL == 'true'
+  begin
+    event.respond eval code.join(' ')
+  rescue
+    "エラーが発生しました。
       実行したコード：#{code.join(' ')}"
-    end
-  else
-    event.respond("許可されていません\nconfig.envのEVALをtrueに変更してください")
   end
 end
 
@@ -352,10 +341,7 @@ bot.command(
   arg_types: [String, String],
   min_args: 2
 ) do |event, before, after|
-  unless event.author.permission?('administrator') == true
-    event.respond('サーバーの管理者しか実行できません')
-    break
-  end
+  return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   add_jisyo(event.server.id, before, after)
   event.respond('辞書に追加しました')
 end
@@ -367,10 +353,7 @@ bot.command(
   arg_types: [String],
   min_args: 1
 ) do |event, before|
-  unless event.author.permission?('administrator') == true
-    event.respond('サーバーの管理者しか実行できません')
-    break
-  end
+  return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   if remove_jisyo(event.server.id, before) === false
     event.respond('存在しません')
   else
@@ -433,16 +416,13 @@ bot.command(
   arg_types: [Float],
   min_args: 1
 ) do |event, vol|
-  if vol.nil?
-    event.respond('数字を入力してね')
+  return '数字を入力してね' if vol.nil?
+  if vol <= 150 && vol >= 0
+    voice_bot = event.voice
+    voice_bot.filter_volume = vol
+    event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
   else
-    if vol <= 150 && vol >= 0
-      voice_bot = event.voice
-      voice_bot.filter_volume = vol
-      event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
-    else
-      event.respond('ボリュームを0から150の間で入力してください')
-    end
+    event.respond('ボリュームを0から150の間で入力してください')
   end
 end
 
@@ -450,19 +430,16 @@ bot.command(
   :stop,
   description: '読み上げを終了する'
 ) do |event|
-  if event.user.voice_channel.nil? == true
-    event.respond('ボイスチャット入っていません')
-  else
-    event.voice.destroy
-    yomiage_end(event.server.id)
-    $yomiage_target_channel.delete(event.server.id)
-    event.channel.send_embed do |embed|
-      embed.title = event.server.bot.name
-      embed.description = <<EOL
+  return 'ボイスチャット入っていません' if event.user.voice_channel.nil? == true
+  event.voice.destroy
+  yomiage_end(event.server.id)
+  $yomiage_target_channel.delete(event.server.id)
+  event.channel.send_embed do |embed|
+    embed.title = event.server.bot.name
+    embed.description = <<EOL
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
-    end
   end
 end
 
@@ -473,19 +450,16 @@ bot.command(
   arg_types: [String],
   min_args: 1
 ) do |event, pre|
-  if event.author.permission?('administrator') == true
-    return 'prefixが不正だよ' if pre.nil?
-    if pre.size <= 2
-      if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
-        event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
-      else
-        event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
-      end
+  return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
+  return 'prefixが不正だよ' if pre.nil?
+  if pre.size <= 2
+    if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
+      event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
     else
-      event.respond('prefixを二文字以内にしてください')
+      event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
     end
   else
-    event.respond('サーバーの管理者しか実行できません')
+    event.respond('prefixを二文字以内にしてください')
   end
 end
 
@@ -493,12 +467,9 @@ bot.command(
   :botstop,
   description: 'ボットを停止する'
 ) do |event|
-  if event.user.id == OWNER_ID
-    event.respond('ボットを停止中です')
-    event.bot.stop
-  else
-    event.respond('このボットのオーナーじゃないためボットを停止することができません')
-  end
+  return 'このボットのオーナーじゃないためボットを停止することができません' unless event.user.id == OWNER_ID
+  event.respond('ボットを停止中です')
+  event.bot.stop
 end
 
 bot.command(
