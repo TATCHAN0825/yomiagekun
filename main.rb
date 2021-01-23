@@ -92,18 +92,13 @@ def get_jisyo_all(serverid)
   Dictionary.where(serverid: serverid)
 end
 
-# 辞書の通り置換されたメッセージ返す
+# 辞書の通り置換する
 def jisyo_replace(serverid, message)
   # TODO: MySQLでは結合にconcatを使うけど..。
   dictionaries = Dictionary.where(serverid: serverid).where('? LIKE "%"||before||"%"', message).order('length(before) DESC')
-  dictionaries.each do |dictionary|
-    message = message.gsub(dictionary.before, dictionary.after)
-  end
+  dictionaries.each { |dictionary| message.gsub!(dictionary.before, dictionary.after) }
   emojis = Emoji.where('? LIKE "%"||character||"%"', message)
-  emojis.each do |emoji|
-    message = message.gsub(emoji.character, emoji.read)
-  end
-  message
+  emojis.each { |emoji| message.gsub!(emoji.character, emoji.read) }
 end
 
 def set_prefix(pre, serverid)
@@ -177,7 +172,8 @@ def yomiage_suru(event, msg, voice, userid, serverid)
     $yomiagenow.push(serverid)
     loop do
       if yomiage_exists?(serverid)
-        text = jisyo_replace(serverid, $queue[serverid].shift)
+        text = $queue[serverid].shift
+        jisyo_replace(serverid, text)
         event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
