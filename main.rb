@@ -430,7 +430,7 @@ bot.command(
   :stop,
   description: '読み上げを終了する'
 ) do |event|
-  return 'ボイスチャット入っていません' if event.user.voice_channel.nil? == true
+  return 'まだ読み上げを開始していません' unless yomiage_exists?(event.server.id) == true
   event.voice.destroy
   yomiage_end(event.server.id)
   $yomiage_target_channel.delete(event.server.id)
