@@ -123,6 +123,12 @@ def float?(value)
   /^[+-]?[0-9]*[.]?[0-9]+$/ =~ value
 end
 
+def replace_url_to_s(text, s = 'url省略')
+  #regexp = URI::DEFAULT_PARSER.make_regexp(%w(http, https))
+  regexp = URI::DEFAULT_PARSER.make_regexp
+  text.to_enum(:scan, regexp).map { Regexp.last_match }.each { |match| text.gsub!(match[0], s) }
+end
+
 prefix_proc = proc do |message|
   prefix = get_prefix(message.server.id)
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
@@ -165,9 +171,7 @@ def yomiage_end(serverid)
 end
 
 def yomiage_suru(event, msg, voice, userid, serverid)
-  if URI::DEFAULT_PARSER.make_regexp.match(msg).nil? == false
-    msg = "url省略"
-  end
+  replace_url_to_s(msg)
   $queue[serverid].push(msg)
   unless $yomiagenow.include?(serverid) # キュー消化中でなかったら
     $yomiagenow.push(serverid)
