@@ -452,14 +452,11 @@ bot.command(
 ) do |event, pre|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   return 'prefixが不正だよ' if pre.nil?
-  if pre.size <= 2
-    if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
-      event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
-    else
-      event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
-    end
+  return 'prefixを1文字以上10文字以内にしてください' unless pre.size >= 1 and pre.size <= 10
+  if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
+    event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
   else
-    event.respond('prefixを二文字以内にしてください')
+    event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
   end
 end
 
