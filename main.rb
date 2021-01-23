@@ -361,7 +361,7 @@ end
 bot.command(
   :removeword,
   description: '単語を削除する',
-  usage: 'removeword 単語'
+  usage: 'removeword <単語>'
 ) do |event, before|
   unless event.author.permission?('administrator') == true
     event.respond('サーバーの管理者しか実行できません')
