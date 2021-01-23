@@ -2,6 +2,8 @@ require 'discordrb'
 require 'json'
 require 'dotenv'
 require 'sqlite3'
+require "net/http"
+require 'rexml/document'
 require './db/connect'
 require './models/user'
 require './models/prefix'
@@ -10,7 +12,7 @@ require './models/emoji'
 Dotenv.load 'config.env'
 
 # dotenvで必要な値を定義する
-DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL'].freeze
+DOTENV_REQUIRED = ['TOKEN', 'OWNER_ID', 'DEFAULT_PREFIX', 'EVAL', 'YAHOO_APPID'].freeze
 
 error_count = 0
 DOTENV_REQUIRED.each do |required|
@@ -124,6 +126,21 @@ def replace_url_to_s(text, s = 'url省略')
   text.to_enum(:scan, regexp).map { Regexp.last_match }.each { |match| text.gsub!(match[0], s) }
 end
 
+def romaji_to_hiragana(text)
+  query = URI.encode_www_form(
+    appid: ENV["YAHOO_APPID"],
+    sentence: text,
+    format: 'roman',
+    mode: 'roman'
+  )
+  response = Net::HTTP.get_response(URI.parse('https://jlp.yahooapis.jp/JIMService/V1/conversion?' + query))
+  unless response.code == '200'
+    puts "Yahoo APIエラー発生: " + response.code
+    return text
+  end
+  REXML::Document.new(response.body).elements['ResultSet/Result/SegmentList/Segment/SegmentText'].text
+end
+
 prefix_proc = proc do |message|
   prefix = get_prefix(message.server.id)
   message.content[prefix.size..-1] if message.content.start_with?(prefix)
@@ -174,6 +191,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
       if yomiage_exists?(serverid)
         text = $queue[serverid].shift
         jisyo_replace(serverid, text)
+        text = romaji_to_hiragana(text)
         event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
