@@ -403,7 +403,7 @@ bot.voice_state_update do |event|
       $yomiage_target_channel.delete(event.server.id)
     end
     # 読み上げを終了していないのにVCから切断された場合読み上げを終了する
-    if yomiage_exists?(event.server.id) and !(event.old_channel.users.include?(event.bot))
+    if yomiage_exists?(event.server.id) and !(event.old_channel.users.map { |user| user.id }.include?(event.server.bot.id))
       puts "読み上げを終了していないのにVCから切断されました"
       yomiage_end(event.server.id)
       $yomiage_target_channel.delete(event.server.id)
