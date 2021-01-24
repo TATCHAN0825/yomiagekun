@@ -438,7 +438,7 @@ EOL
   else
     # 強制終了
     return 'ボイスチャンネルが一つもないよ' if event.server.voice_channels.size <= 0
-    event.channel.send_embed do |embed|
+    stopping_message = event.channel.send_embed do |embed|
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを強制終了しています
@@ -456,6 +456,7 @@ EOL
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
     end
+    stopping_message.delete
   end
 end
 
