@@ -394,7 +394,8 @@ end
 
 bot.voice_state_update do |event|
   if event.channel.nil?
-    if event.old_channel.users.size == 1
+    # VCの参加者がこのbotだけになった場合に読み上げを終了する
+    if event.old_channel.users.size == 1 and event.old_channel.users[0].current_bot?
       $yomiage_target_channel[event.server.id].each do |id|
         channel = event.bot.channel(id, event.server.id)
         embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
@@ -404,27 +405,13 @@ bot.voice_state_update do |event|
       event.bot.voices[event.server.id].destroy
       yomiage_end(event.server.id)
       $yomiage_target_channel.delete(event.server.id)
-
     end
-
-    botgairu = false
-    event.old_channel.users.each do |user|
-      if user.current_bot? == true
-        botgairu = true
-      end
+    # 読み上げを終了していないのにVCから切断された場合読み上げを終了する
+    if yomiage_exists?(event.server.id) and !(event.old_channel.users.include?(event.bot))
+      puts "読み上げを終了していないのにVCから切断されました"
+      yomiage_end(event.server.id)
+      $yomiage_target_channel.delete(event.server.id)
     end
-
-    if botgairu == false
-      $yomiage_target_channel[event.server.id].each do |id|
-        channel = event.bot.channel(id, event.server.id)
-        embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
-        embed.description = "botが堕ちました"
-        event.bot.send_message(channel, "", false, embed)
-        yomiage_end(event.server.id)
-        $yomiage_target_channel.delete(event.server.id)
-      end
-    end
-
   end
 end
 
