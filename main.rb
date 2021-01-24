@@ -266,30 +266,23 @@ bot.command(
   description: 'ボイスを設定する',
   usage: 'setvoice <声質> <感情> <速さ> <高さ>',
   arg_types: [String, String, Float, Float],
-  min_args: 1 #TODO: どうしよ
+  min_args: 4
 ) do |event, voice, emotion, speed, tone|
-  error_messages = []
-
   unless VOICES.include?(voice)
-    voice = nil
-    error_messages << "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
+    return "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
   end
   unless emotion_included?(voice, emotion)
-    emotion = nil
-    error_messages << "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
+    return "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
   end
   if speed.nil?
-    error_messages << 'speedは数値にしてね'
+    return 'speedは数値にしてね'
   end
   if tone.nil?
-    error_messages << 'toneは数値にしてね'
+    return 'toneは数値にしてね'
   end
 
-  messages = error_messages.join("\n")
-
   if update_user_data(event.user.id, voice, emotion, speed, tone)
-    event.respond("設定を保存しました\n" + ((size = error_messages.size).positive? ?
-                                     "ただし、#{size.to_s}件の設定は保存できませんでした:\n" + messages : ''))
+    event.respond("設定を保存しました")
   else
     event.respond('設定を保存できませんでした')
   end
