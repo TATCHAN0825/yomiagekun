@@ -228,6 +228,7 @@ bot.command(
     embed.description = <<EOL
 読み上げを開始します
 読み上げ対象チャンネル#{name}
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
   end
@@ -441,6 +442,7 @@ bot.command(
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを終了してします
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
     end
