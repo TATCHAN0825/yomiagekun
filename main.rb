@@ -433,16 +433,38 @@ bot.command(
   :stop,
   description: '読み上げを終了する'
 ) do |event|
-  return 'まだ読み上げを開始していません' unless yomiage_exists?(event.server.id) == true
-  event.voice.destroy
-  yomiage_end(event.server.id)
-  $yomiage_target_channel.delete(event.server.id)
-  event.channel.send_embed do |embed|
-    embed.title = event.server.bot.name
-    embed.description = <<EOL
+  if yomiage_exists?(event.server.id) == true
+    event.voice.destroy
+    yomiage_end(event.server.id)
+    $yomiage_target_channel.delete(event.server.id)
+    event.channel.send_embed do |embed|
+      embed.title = event.server.bot.name
+      embed.description = <<EOL
 読み上げを終了してします
 使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
 EOL
+    end
+  else
+    # 強制終了
+    return 'ボイスチャンネルが一つもないよ' if event.server.voice_channels.size <= 0
+    event.channel.send_embed do |embed|
+      embed.title = event.server.bot.name
+      embed.description = <<EOL
+読み上げを強制終了しています
+強制終了中にサーバー内のボイスチャンネルに接続する場合があります
+EOL
+    end
+    bot.voice_connect(event.server.voice_channels[0]) # 一旦接続しないとできない
+    event.voice.destroy
+    yomiage_end(event.server.id)
+    $yomiage_target_channel.delete(event.server.id)
+    event.channel.send_embed do |embed|
+      embed.title = event.server.bot.name
+      embed.description = <<EOL
+読み上げを強制終了しました
+使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+EOL
+    end
   end
 end
 
