@@ -217,7 +217,8 @@ end
 
 bot.command(
   :start,
-  description: '読み上げを開始する'
+  description: '読み上げを開始する',
+  aliases: [:s]
 ) do |event|
   channel = event.user.voice_channel
   return 'ボイスチャット入ろうね!!' if channel.nil? == true
@@ -243,7 +244,8 @@ end
 
 bot.command(
   :getvoice,
-  description: 'ボイス設定を表示する'
+  description: 'ボイス設定を表示する',
+  aliases: [:gv]
 ) do |event|
   if user_data_exists?(event.user.id)
     user = get_user_data(event.user.id)
@@ -267,7 +269,8 @@ bot.command(
   description: 'ボイスを設定する',
   usage: 'setvoice <声質> <感情> <速さ> <高さ>',
   arg_types: [String, String, Float, Float],
-  min_args: 4
+  min_args: 4,
+  aliases: [:sv]
 ) do |event, voice, emotion, speed, tone|
   unless available_voices.include?(voice)
     return "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
@@ -308,7 +311,7 @@ end
 bot.command(
   :voicelist,
   description: 'ボイス/感情リストを表示する',
-  aliases: [:emotionlist]
+  aliases: [:emotionlist, :vl, :el]
 ) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボイス/感情リスト'
@@ -321,7 +324,8 @@ bot.command(
   description: '単語を追加する',
   usage: 'addword <単語> <読み>',
   arg_types: [String, String],
-  min_args: 2
+  min_args: 2,
+  aliases: [:aw]
 ) do |event, before, after|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   add_jisyo(event.server.id, before, after)
@@ -333,7 +337,8 @@ bot.command(
   description: '単語を削除する',
   usage: 'removeword <単語>',
   arg_types: [String],
-  min_args: 1
+  min_args: 1,
+  aliases: [:rw]
 ) do |event, before|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   if remove_jisyo(event.server.id, before) === false
@@ -345,7 +350,8 @@ end
 
 bot.command(
   :wordlist,
-  description: '単語リストを表示する'
+  description: '単語リストを表示する',
+  aliases: [:wl]
 ) do |event|
   words_list_string = ""
   get_jisyo_all(event.server.id).each do |dictionary|
@@ -398,7 +404,8 @@ bot.command(
   description: '音量を設定する',
   usage: 'volume <音量>',
   arg_types: [Float],
-  min_args: 1
+  min_args: 1,
+  aliases: [:vol]
 ) do |event, vol|
   return '先に読み上げを開始してください' if event.voice.nil?
   return '数字を入力してね' if vol.nil?
@@ -413,7 +420,8 @@ end
 
 bot.command(
   :stop,
-  description: '読み上げを終了する'
+  description: '読み上げを終了する',
+  aliases: [:end, :e]
 ) do |event|
   if yomiage_exists?(event.server.id) == true
     event.voice.destroy
@@ -456,7 +464,8 @@ bot.command(
   description: 'プレフィックスを設定する',
   usage: 'setprefix <プレフィックス>',
   arg_types: [String],
-  min_args: 1
+  min_args: 1,
+  aliases: [:sp]
 ) do |event, pre|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   return 'prefixが不正だよ' if pre.nil?
@@ -470,7 +479,8 @@ end
 
 bot.command(
   :botstop,
-  description: 'ボットを停止する'
+  description: 'ボットを停止する',
+  aliases: [:bs]
 ) do |event|
   return 'このボットのオーナーじゃないためボットを停止することができません' unless event.user.id == OWNER_ID
   event.respond('ボットを停止中です')
@@ -479,7 +489,8 @@ end
 
 bot.command(
   :botinfo,
-  description: 'ボットの詳細を表示する'
+  description: 'ボットの詳細を表示する',
+  aliases: [:bi]
 ) do |event|
   event.channel.send_embed do |embed|
     embed.title = 'ボットの詳細'
