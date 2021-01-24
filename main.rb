@@ -33,13 +33,6 @@ PREFIXDATA = DATA + '\prefix.json'.freeze
 MIGRATED_PREFIXDATA = DATA + '\migrated_prefix.json'.freeze
 OPEN_JTALK = 'open_jtalk\bin\open_jtalk.exe'.freeze
 VOICE = ' -m open_jtalk\bin\Voice'.freeze
-VOICES = ['mei', 'takumi', 'slt'].freeze
-EMOTIONS = ['normal', 'angry', 'sad', 'bashful', 'happy'].freeze
-NORMAL = '\normal.htsvoice'.freeze
-ANGRY = '\angry.htsvoice'.freeze
-SAD = '\sad.htsvoice'.freeze
-BASHFUL = '\bashful.htsvoice'.freeze
-HAPPY = '\happy.htsvoice'.freeze
 DIC = ' -x open_jtalk\bin\dic'.freeze
 INPUT = 'open_jtalk\bin\input'.freeze
 OUTPUT = 'open_jtalk\bin\output'.freeze
@@ -75,6 +68,20 @@ if Emoji.count < 1
   end
 
   puts add_count.to_s + "個の絵文字を登録しました"
+end
+
+def available_voices
+  Dir.glob("./open_jtalk/bin/Voice/*").map do |file|
+    next unless FileTest.directory?(file)
+    File.basename(file)
+  end.compact
+end
+
+def available_emotions(voice)
+  Dir.glob("./open_jtalk/bin/Voice/#{voice}/*.htsvoice").map do |file|
+    next if FileTest.directory?(file)
+    File.basename(file).chomp('.htsvoice')
+  end.compact
 end
 
 def add_jisyo(serverid, before, after)
@@ -255,12 +262,6 @@ EOL
   end
 end
 
-def emotion_included?(voice, emotion)
-  voiceemotion = { 'mei' => ['angry', 'bashful', 'happy', 'normal', 'sad'], 'takumi' => ['normal', 'angry', 'sad', 'happy'],
-                   'slt' => ['normal'] }
-  voiceemotion[voice]&.include?(emotion)
-end
-
 bot.command(
   :setvoice,
   description: 'ボイスを設定する',
@@ -268,10 +269,10 @@ bot.command(
   arg_types: [String, String, Float, Float],
   min_args: 4
 ) do |event, voice, emotion, speed, tone|
-  unless VOICES.include?(voice)
+  unless available_voices.include?(voice)
     return "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
   end
-  unless emotion_included?(voice, emotion)
+  unless available_emotions(voice).include?(emotion)
     return "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
   end
   if speed.nil?
@@ -305,26 +306,13 @@ bot.command(
 end
 
 bot.command(
-  :emotionlist,
-  description: '感情リストを表示する'
-) do |event|
-  event.channel.send_embed do |embed|
-    embed.title = '感情リスト'
-    embed.description = "
-    mei [angry,bashful,happy,normal,sad]\ntakumi [normal,angry,sad,happy]
-"
-  end
-end
-
-bot.command(
   :voicelist,
-  description: 'ボイスリストを表示する'
+  description: 'ボイス/感情リストを表示する',
+  aliases: [:emotionlist]
 ) do |event|
   event.channel.send_embed do |embed|
-    embed.title = 'ボイスリスト'
-    embed.description = "
-    mei\ntakumi
-"
+    embed.title = 'ボイス/感情リスト'
+    embed.description = available_voices.map { |voice| "#{voice} [#{available_emotions(voice).join(',')}]" }.join("\n")
   end
 end
 
