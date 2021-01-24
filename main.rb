@@ -376,19 +376,15 @@ bot.command(
 end
 
 bot.message do |event|
-  unless event.user.bot_account
-    if yomiage_exists?(event.server.id) == true
-      if user_data_exists?(event.user.id) == true
-        if $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
-          unless event.content.start_with?(";")
-            yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
-          end
-        end
-      else
-        register_user_data(event.user.id)
-        event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
-      end
-    end
+  break if event.user.bot_account
+  break unless yomiage_exists?(event.server.id) == true
+  if user_data_exists?(event.user.id) == true
+    break unless $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
+    break if event.content.start_with?(";")
+    yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+  else
+    register_user_data(event.user.id)
+    event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
   end
 end
 
