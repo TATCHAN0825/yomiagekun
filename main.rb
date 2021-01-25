@@ -199,8 +199,16 @@ def yomiage_suru(event, msg, voice, userid, serverid)
 end
 
 def yomiage(event, msg, voice, userid, serverid)
-  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   user = get_user_data(userid)
+  unless available_voices.include?(user.voice)
+    event.respond("対応していない声質です\n声質を設定し直してね")
+    return
+  end
+  unless available_emotions(user.voice).include?(user.emotion)
+    event.respond("対応していない感情です\n感情を設定し直してね")
+    return
+  end
+  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
     #voice_bot = event.voice
