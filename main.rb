@@ -28,6 +28,8 @@ DEBUG_ACTIVERECORD_LOG = (ENV["DEBUG_ACTIVERECORD_LOG"] || false) == 'true'
 DEBUG_SEND_YOMIAGE = (ENV["DEBUG_SEND_YOMIAGE"] || false) == 'true'
 DEBUG_DISABLE_TALK = (ENV["DEBUG_DISABLE_TALK"] || false) == 'true'
 
+ALPHABET_EMOJIS = ('🇦'..'🇿').to_a
+
 DATA = 'data'.freeze
 PREFIXDATA = DATA + '\prefix.json'.freeze
 MIGRATED_PREFIXDATA = DATA + '\migrated_prefix.json'.freeze
@@ -45,6 +47,13 @@ ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
 
 $queue = Hash.new { |h, k| h[k] = [] }
 $yomiage_target_channel = Hash.new { |h, k| h[k] = [] }
+
+# User.id => Message
+$select_voice_reaction_waiting = {}
+# User.id => voice
+$select_voice_cache = {}
+# User.id => Message
+$select_emotion_reaction_waiting = {}
 
 # jsonのprefixからDBに移行
 if File.exist?(PREFIXDATA)
@@ -265,19 +274,13 @@ EOL
 end
 
 bot.command(
-  :setvoice,
-  description: 'ボイスを設定する',
-  usage: 'setvoice <声質> <感情> <速さ> <高さ>',
-  arg_types: [String, String, Float, Float],
-  min_args: 4,
-  aliases: [:sv]
-) do |event, voice, emotion, speed, tone|
-  unless available_voices.include?(voice)
-    return "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
-  end
-  unless available_emotions(voice).include?(emotion)
-    return "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
-  end
+  :setspeedtone,
+  description: '速さと高さを設定する',
+  usage: 'setspeedtone <速さ> <高さ>',
+  arg_types: [Float, Float],
+  min_args: 2,
+  aliases: [:sst]
+) do |event, speed, tone|
   if speed.nil?
     return 'speedは数値にしてね'
   end
@@ -285,10 +288,57 @@ bot.command(
     return 'toneは数値にしてね'
   end
 
-  if update_user_data(event.user.id, voice, emotion, speed, tone)
+  if update_user_data(event.user.id, nil, nil, speed, tone)
     event.respond("設定を保存しました")
   else
     event.respond('設定を保存できませんでした')
+  end
+end
+
+bot.command(
+  :setvoiceemotion,
+  description: '声質と感情を設定する',
+  aliases: [:sve]
+) do |event|
+  i = -1
+  message = event.channel.send_embed do |embed|
+    embed.title = '声質選択'
+    embed.description = "声質を選んでね\n" +
+      available_voices.map { |voice| i += 1; "#{ALPHABET_EMOJIS[i]} #{voice}" }.join("\n")
+  end
+  available_voices.size.times { |j| message.create_reaction(ALPHABET_EMOJIS[j]) }
+  $select_voice_reaction_waiting.store(event.user.id, message)
+  nil # 神言語なので必要
+end
+
+bot.reaction_add do |event|
+  if $select_voice_reaction_waiting.keys.include?(event.user.id) and event.message === (message = $select_voice_reaction_waiting[event.user.id])
+    next if (select_index = ALPHABET_EMOJIS.index(event.emoji.to_reaction)).nil?
+    next if (select_voice = available_voices[select_index]).nil?
+    $select_voice_reaction_waiting.delete(event.user.id)
+    message.delete
+    i = -1
+    message = event.channel.send_embed do |embed|
+      embed.title = "感情選択 [#{select_voice}]"
+      embed.description = "感情を選んでね\n" +
+        available_emotions(select_voice).map { |emotion| i += 1; "#{ALPHABET_EMOJIS[i]} #{emotion}" }.join("\n")
+    end
+    $select_voice_cache[event.user.id] = select_voice
+    available_emotions(select_voice).size.times { |j| message.create_reaction(ALPHABET_EMOJIS[j]) }
+    $select_emotion_reaction_waiting.store(event.user.id, message)
+  end
+  if $select_emotion_reaction_waiting.keys.include?(event.user.id) and event.message === (message = $select_emotion_reaction_waiting[event.user.id])
+    select_voice = $select_voice_cache[event.user.id]
+    $select_voice_cache.delete(event.user.id)
+    next if (select_index = ALPHABET_EMOJIS.index(event.emoji.to_reaction)).nil?
+    next if (select_emotion = available_emotions(select_voice)[select_index]).nil?
+    $select_emotion_reaction_waiting.delete(event.user.id)
+    message.delete
+    if update_user_data(event.user.id, select_voice, select_emotion)
+      event.respond("設定を保存しました")
+    else
+      event.respond('設定を保存できませんでした')
+    end
   end
 end
 
