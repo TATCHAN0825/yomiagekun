@@ -294,6 +294,12 @@ bot.command(
   if tone.nil?
     return 'toneは数値にしてね'
   end
+  unless speed >= 0 and speed <= 100
+    return 'speedは0以上100以下にしてね'
+  end
+  unless tone >= 0 and tone <= 100
+    return 'toneは0以上100以下にしてね'
+  end
 
   if update_user_data(event.user.id, voice, emotion, speed, tone)
     event.respond("設定を保存しました")
