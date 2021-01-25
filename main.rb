@@ -207,7 +207,7 @@ def yomiage(event, msg, voice, userid, serverid)
     event.respond("対応していない感情です\n感情を設定し直してね")
     return
   end
-  event.respond "読み上げ: `#{msg}`" if DEBUG_SEND_YOMIAGE
+  event.respond "読み上げ: `#{msg.gsub('`', '')}`" if DEBUG_SEND_YOMIAGE
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
@@ -487,6 +487,7 @@ bot.command(
 ) do |event, pre|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   return 'prefixが不正だよ' if pre.nil?
+  pre.gsub!('`', '')
   return 'prefixを1文字以上10文字以内にしてください' unless pre.size >= 1 and pre.size <= 10
   if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
     event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
