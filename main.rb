@@ -183,7 +183,6 @@ def yomiage_suru(event, msg, voice, userid, serverid)
         jisyo_replace(serverid, text)
         text = text.slice(0, YOMIAGE_MAX_LENGTH_HARD)
         text.gsub!(/[\r\n]/, " ")
-        event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
         rescue Exception => e
@@ -208,6 +207,7 @@ def yomiage(event, msg, voice, userid, serverid)
     event.respond("対応していない感情です\n感情を設定し直してね")
     return
   end
+  event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
