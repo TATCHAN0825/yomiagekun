@@ -186,7 +186,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
         rescue Exception => e
-          event.respond("読み上げ中にエラーが発生したよ: " + e.message)
+          event.respond("読み上げ中にエラーが発生したよ: `#{e.message}`")
         end
       end
       if $queue[serverid].size.zero? or !(yomiage_exists?(serverid))
@@ -207,7 +207,7 @@ def yomiage(event, msg, voice, userid, serverid)
     event.respond("対応していない感情です\n感情を設定し直してね")
     return
   end
-  event.respond '読み上げ: ' + msg if DEBUG_SEND_YOMIAGE
+  event.respond "読み上げ: `#{msg}`" if DEBUG_SEND_YOMIAGE
   File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
@@ -246,8 +246,8 @@ bot.command(
     embed.description = <<EOL
 読み上げを開始します
 読み上げ対象チャンネル#{name}
-読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、`#{get_prefix(event.message.server.id)}stop`コマンドで強制終了してね
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
   end
 end
@@ -260,12 +260,12 @@ bot.command(
   if user_data_exists?(event.user.id)
     user = get_user_data(event.user.id)
     event.channel.send_embed do |embed|
-      embed.title = "#{event.user.name}さんのボイス設定"
+      embed.title = "`#{event.user.name}`さんのボイス設定"
       embed.description = <<EOL
-voice: #{user.voice}
-emotion: #{user.emotion}
-speed: #{user.speed}
-tone: #{user.tone}
+voice: `#{user.voice}`
+emotion: `#{user.emotion}`
+speed: `#{user.speed}`
+tone: `#{user.tone}`
 EOL
     end
   else
@@ -283,10 +283,10 @@ bot.command(
   aliases: [:sv]
 ) do |event, voice, emotion, speed, tone|
   unless available_voices.include?(voice)
-    return "対応していないvoiceです\n対応しているvoiceは#{get_prefix(event.server.id)}voicelistを参考にしてください"
+    return "対応していないvoiceです\n対応しているvoiceは`#{get_prefix(event.server.id)}voicelist`を参考にしてください"
   end
   unless available_emotions(voice).include?(emotion)
-    return "対応していないemotionです\n対応しているemotionは#{get_prefix(event.server.id)}emotionlistを参考にしてください"
+    return "対応していないemotionです\n対応しているemotionは`#{get_prefix(event.server.id)}emotionlist`を参考にしてください"
   end
   if speed.nil?
     return 'speedは数値にしてね'
@@ -314,7 +314,7 @@ bot.command(
     event.respond eval code.join(' ')
   rescue
     "エラーが発生しました。
-      実行したコード：#{code.join(' ')}"
+      実行したコード：`#{code.join(' ')}`"
   end
 end
 
@@ -394,7 +394,7 @@ bot.voice_state_update do |event|
       $yomiage_target_channel[event.server.id].each do |id|
         channel = event.bot.channel(id, event.server.id)
         embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
-        embed.description = "人がいなくなったため\n読み上げを終了しています\n使い方は#{get_prefix(event.server.id)}helpを参考にしてください"
+        embed.description = "人がいなくなったため\n読み上げを終了しています\n使い方は`#{get_prefix(event.server.id)}help`を参考にしてください"
         event.bot.send_message(channel, "", false, embed)
       end
       event.bot.voices[event.server.id].destroy
@@ -423,7 +423,7 @@ bot.command(
   if vol <= 150 && vol >= 0
     voice_bot = event.voice
     voice_bot.filter_volume = vol
-    event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
+    event.respond("ボリュームを`#{voice_bot.filter_volume}`にしました")
   else
     event.respond('ボリュームを0から150の間で入力してください')
   end
@@ -442,8 +442,8 @@ bot.command(
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを終了してします
-読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、`#{get_prefix(event.message.server.id)}stop`コマンドで強制終了してね
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
     end
   else
@@ -464,7 +464,7 @@ EOL
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを強制終了しました
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
     end
     stopping_message.delete
@@ -485,7 +485,7 @@ bot.command(
   if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
     event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
   else
-    event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+    event.respond("`#{event.server.name}`のprefixを`#{pre}`に変更しました")
   end
 end
 
@@ -512,7 +512,7 @@ SERVERS
 USERS
 #{bot.users.size}
 PREFIX
-#{get_prefix(event.server.id)}
+`#{get_prefix(event.server.id)}`
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
