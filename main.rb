@@ -39,6 +39,7 @@ OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = ENV['OWNER_ID'].to_i.freeze
 DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
 EVAL = ENV['EVAL'].freeze
+YOMIAGE_MAX_LENGTH_HARD = 100
 $yomiage = []
 $yomiagenow = [] # キュー消化中のリスト
 ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
@@ -181,6 +182,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
       if yomiage_exists?(serverid)
         text = $queue[serverid].shift
         jisyo_replace(serverid, text)
+        text = text.slice(0, YOMIAGE_MAX_LENGTH_HARD)
         event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
@@ -369,7 +371,8 @@ bot.message do |event|
   if user_data_exists?(event.user.id) == true
     next unless $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
     next if event.content.start_with?(";")
-    yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+    # セキュリティのため読み上げ最大長の2倍までに制限
+    yomiage_suru(event, event.content.slice(0, YOMIAGE_MAX_LENGTH_HARD * 2), event.voice, event.user.id, event.server.id)
   else
     register_user_data(event.user.id)
     event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
