@@ -151,9 +151,8 @@ def get_user_data(userid)
 end
 
 def register_user_data(userid)
-  voice = %w[mei takumi].sample
-  voiceemotion = { 'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy], }
-  emotion = voiceemotion[voice].sample
+  voice = available_voices.sample
+  emotion = available_emotions(voice).sample
   User.create(id: userid, voice: voice, emotion: emotion, speed: 1.0, tone: 1.0)
 end
 
