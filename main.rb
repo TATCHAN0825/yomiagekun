@@ -183,6 +183,7 @@ def yomiage_suru(event, msg, voice, userid, serverid)
         text = $queue[serverid].shift
         jisyo_replace(serverid, text)
         text = text.slice(0, YOMIAGE_MAX_LENGTH_HARD)
+        text.gsub!(/[\r\n]/, " ")
         event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
