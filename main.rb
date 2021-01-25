@@ -41,6 +41,7 @@ OUTPUT = 'open_jtalk\bin\output'.freeze
 OWNER_ID = ENV['OWNER_ID'].to_i.freeze
 DEFAULT_PREFIX = ENV['DEFAULT_PREFIX'].freeze
 EVAL = ENV['EVAL'].freeze
+YOMIAGE_MAX_LENGTH_HARD = 100
 $yomiage = []
 $yomiagenow = [] # キュー消化中のリスト
 ActiveRecord::Base.logger = Logger.new(STDOUT) if DEBUG_ACTIVERECORD_LOG
@@ -159,9 +160,8 @@ def get_user_data(userid)
 end
 
 def register_user_data(userid)
-  voice = %w[mei takumi].sample
-  voiceemotion = { 'mei' => %w[angry bashful happy normal sad], 'takumi' => %w[normal angry sad happy], }
-  emotion = voiceemotion[voice].sample
+  voice = available_voices.sample
+  emotion = available_emotions(voice).sample
   User.create(id: userid, voice: voice, emotion: emotion, speed: 1.0, tone: 1.0)
 end
 
@@ -190,11 +190,12 @@ def yomiage_suru(event, msg, voice, userid, serverid)
       if yomiage_exists?(serverid)
         text = $queue[serverid].shift
         jisyo_replace(serverid, text)
-        event.respond '読み上げ: ' + text if DEBUG_SEND_YOMIAGE
+        text = text.slice(0, YOMIAGE_MAX_LENGTH_HARD)
+        text.gsub!(/[\r\n]/, " ")
         begin
           yomiage(event, text, voice, userid, serverid) unless DEBUG_DISABLE_TALK
         rescue Exception => e
-          event.respond("読み上げ中にエラーが発生したよ: " + e.message)
+          event.respond("読み上げ中にエラーが発生したよ: `#{e.message}`")
         end
       end
       if $queue[serverid].size.zero? or !(yomiage_exists?(serverid))
@@ -206,8 +207,17 @@ def yomiage_suru(event, msg, voice, userid, serverid)
 end
 
 def yomiage(event, msg, voice, userid, serverid)
-  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   user = get_user_data(userid)
+  unless available_voices.include?(user.voice)
+    event.respond("対応していない声質です\n声質を設定し直してね")
+    return
+  end
+  unless available_emotions(user.voice).include?(user.emotion)
+    event.respond("対応していない感情です\n感情を設定し直してね")
+    return
+  end
+  event.respond "読み上げ: `#{msg.gsub('`', '')}`" if DEBUG_SEND_YOMIAGE
+  File.write("open_jtalk\\bin\\input\\v#{event.server.id}.txt", msg, encoding: Encoding::SJIS)
   s = system(cmd = OPEN_JTALK + VOICE + '\\' + "#{user.voice}" + '\\' + "#{user.emotion}" + '.htsvoice' + DIC + ' -fm ' + "#{user.tone}" + ' -r ' + "#{user.speed}" + ' -ow ' + OUTPUT + '\v' + "#{serverid}.wav" + ' ' + INPUT + '\v' + "#{serverid}.txt")
   if s == true
     #voice_bot = event.voice
@@ -245,8 +255,8 @@ bot.command(
     embed.description = <<EOL
 読み上げを開始します
 読み上げ対象チャンネル#{name}
-読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、`#{get_prefix(event.message.server.id)}stop`コマンドで強制終了してね
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
   end
 end
@@ -259,12 +269,12 @@ bot.command(
   if user_data_exists?(event.user.id)
     user = get_user_data(event.user.id)
     event.channel.send_embed do |embed|
-      embed.title = "#{event.user.name}さんのボイス設定"
+      embed.title = "`#{event.user.name}`さんのボイス設定"
       embed.description = <<EOL
-voice: #{user.voice}
-emotion: #{user.emotion}
-speed: #{user.speed}
-tone: #{user.tone}
+voice: `#{user.voice}`
+emotion: `#{user.emotion}`
+speed: `#{user.speed}`
+tone: `#{user.tone}`
 EOL
     end
   else
@@ -286,6 +296,12 @@ bot.command(
   end
   if tone.nil?
     return 'toneは数値にしてね'
+  end
+  unless speed >= 0 and speed <= 100
+    return 'speedは0以上100以下にしてね'
+  end
+  unless tone >= 0 and tone <= 100
+    return 'toneは0以上100以下にしてね'
   end
 
   if update_user_data(event.user.id, nil, nil, speed, tone)
@@ -354,7 +370,7 @@ bot.command(
     event.respond eval code.join(' ')
   rescue
     "エラーが発生しました。
-      実行したコード：#{code.join(' ')}"
+      実行したコード：`#{code.join(' ')}`"
   end
 end
 
@@ -419,7 +435,8 @@ bot.message do |event|
   if user_data_exists?(event.user.id) == true
     next unless $yomiage_target_channel[event.server.id].include?(event.channel.id) == true
     next if event.content.start_with?(";")
-    yomiage_suru(event, event.content, event.voice, event.user.id, event.server.id)
+    # セキュリティのため読み上げ最大長の2倍までに制限
+    yomiage_suru(event, event.content.slice(0, YOMIAGE_MAX_LENGTH_HARD * 2), event.voice, event.user.id, event.server.id)
   else
     register_user_data(event.user.id)
     event.respond('ユーザーデータ存在しなかったけど登録しといたよ')
@@ -433,7 +450,7 @@ bot.voice_state_update do |event|
       $yomiage_target_channel[event.server.id].each do |id|
         channel = event.bot.channel(id, event.server.id)
         embed = Discordrb::Webhooks::Embed.new(title: event.server.bot.name)
-        embed.description = "人がいなくなったため\n読み上げを終了しています\n使い方は#{get_prefix(event.server.id)}helpを参考にしてください"
+        embed.description = "人がいなくなったため\n読み上げを終了しています\n使い方は`#{get_prefix(event.server.id)}help`を参考にしてください"
         event.bot.send_message(channel, "", false, embed)
       end
       event.bot.voices[event.server.id].destroy
@@ -462,7 +479,7 @@ bot.command(
   if vol <= 150 && vol >= 0
     voice_bot = event.voice
     voice_bot.filter_volume = vol
-    event.respond("ボリュームを#{voice_bot.filter_volume}にしました")
+    event.respond("ボリュームを`#{voice_bot.filter_volume}`にしました")
   else
     event.respond('ボリュームを0から150の間で入力してください')
   end
@@ -481,8 +498,8 @@ bot.command(
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを終了してします
-読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、#{get_prefix(event.message.server.id)}stopコマンドで強制終了してね
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+読み上げが終了してからbotがボイスチャットに残った場合や読み上げがされない場合は、`#{get_prefix(event.message.server.id)}stop`コマンドで強制終了してね
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
     end
   else
@@ -503,7 +520,7 @@ EOL
       embed.title = event.server.bot.name
       embed.description = <<EOL
 読み上げを強制終了しました
-使い方は#{get_prefix(event.message.server.id)}helpを参考にしてください
+使い方は`#{get_prefix(event.message.server.id)}help`を参考にしてください
 EOL
     end
     stopping_message.delete
@@ -520,11 +537,12 @@ bot.command(
 ) do |event, pre|
   return 'サーバーの管理者しか実行できません' unless event.author.permission?('administrator') == true
   return 'prefixが不正だよ' if pre.nil?
+  pre.gsub!('`', '')
   return 'prefixを1文字以上10文字以内にしてください' unless pre.size >= 1 and pre.size <= 10
   if (set_prefix_result = set_prefix(pre, event.server.id)).instance_of?(Array)
     event.respond("prefixの設定中にエラーが発生しました:\n" + set_prefix_result.join("\n"))
   else
-    event.respond("#{event.server.name}のprefixを#{pre}に変更しました")
+    event.respond("`#{event.server.name}`のprefixを`#{pre}`に変更しました")
   end
 end
 
@@ -551,7 +569,7 @@ SERVERS
 USERS
 #{bot.users.size}
 PREFIX
-#{get_prefix(event.server.id)}
+`#{get_prefix(event.server.id)}`
 招待リンク(開発中なので導入することをおすすめしません)
 #{event.bot.invite_url}
 開発者
