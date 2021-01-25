@@ -55,6 +55,10 @@ $select_voice_reaction_waiting = {}
 $select_voice_cache = {}
 # User.id => Message
 $select_emotion_reaction_waiting = {}
+# User.id => speed
+$select_speed_cache = {}
+# User.id => tone
+$select_tone_cache = {}
 
 # jsonのprefixからDBに移行
 if File.exist?(PREFIXDATA)
@@ -284,12 +288,12 @@ EOL
 end
 
 bot.command(
-  :setspeedtone,
-  description: '速さと高さを設定する',
+  :setvoice,
+  description: 'ボイスを設定する',
   usage: 'setspeedtone <速さ> <高さ>',
   arg_types: [Float, Float],
   min_args: 2,
-  aliases: [:sst]
+  aliases: [:sv]
 ) do |event, speed, tone|
   if speed.nil?
     return 'speedは数値にしてね'
@@ -304,18 +308,9 @@ bot.command(
     return 'toneは0以上100以下にしてね'
   end
 
-  if update_user_data(event.user.id, nil, nil, speed, tone)
-    event.respond("設定を保存しました")
-  else
-    event.respond('設定を保存できませんでした')
-  end
-end
+  $select_speed_cache[event.user.id] = speed
+  $select_tone_cache[event.user.id] = tone
 
-bot.command(
-  :setvoiceemotion,
-  description: '声質と感情を設定する',
-  aliases: [:sve]
-) do |event|
   i = -1
   message = event.channel.send_embed do |embed|
     embed.title = '声質選択'
@@ -350,7 +345,11 @@ bot.reaction_add do |event|
     next if (select_emotion = available_emotions(select_voice)[select_index]).nil?
     $select_emotion_reaction_waiting.delete(event.user.id)
     message.delete
-    if update_user_data(event.user.id, select_voice, select_emotion)
+    select_speed = $select_speed_cache[event.user.id]
+    $select_speed_cache.delete(event.user.id)
+    select_tone = $select_tone_cache[event.user.id]
+    $select_tone_cache.delete(event.user.id)
+    if update_user_data(event.user.id, select_voice, select_emotion, select_speed, select_tone)
       event.respond("設定を保存しました")
     else
       event.respond('設定を保存できませんでした')
